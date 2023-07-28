@@ -17,6 +17,7 @@ def main():
         data = key_data_pairs[file_name]
         B_INST, E_INST = "[INST]", "[/INST]"
         B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+        
         sys_prompt = get_sys_prompt(args, file_name)
 
         for d in tqdm(data):

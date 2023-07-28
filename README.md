@@ -20,6 +20,6 @@ Open-source models
 - llama2-7b-chat
 - ChatGLM2-6b-8k
 - XGen-8k-inst
-- MPT-7B-65k
+-   
 - LongChat-7b-16k
 - LongChat-13b-16k
