@@ -45,6 +45,27 @@ def compute_f1(a_gold, a_pred):
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
 
+
+from decimal import Decimal
+
+def compare_percentage_and_decimal(str_percent, str_decimal, tolerance=0.01):
+    # 去除空格和逗号
+    str_percent = str_percent.replace(" ", "").replace(",", "")
+    str_decimal = str_decimal.replace(" ", "").replace(",", "")
+    
+    # 将百分数转换为小数
+    decimal_percent = Decimal(str_percent.strip("%")) / Decimal(100)
+    
+    # 将小数字符串转换为 Decimal 类型
+    decimal_decimal = Decimal(str_decimal)
+    
+    # 计算两个数之间的差异
+    diff = abs(decimal_percent - decimal_decimal)
+    
+    # 判断差异是否在容忍范围内
+    return diff <= Decimal(tolerance)
+
+
 def compute_emf1(predictions, references):
 
     # half_correct =0
@@ -56,11 +77,16 @@ def compute_emf1(predictions, references):
     #     if res == 0.25:
     #         half_correct +=1
     # print(f"There are {correct} correct answers \n {half_correct} can not select all correct options\n Total: {len(predictions)} questions.")
+    
+    
     total = len(references)
     em_list = []
     f1_list = []
     for prediction, reference in zip(predictions, references):
-        em = compute_exact(str(prediction), str(reference))
+        if '%' in str(prediction):
+            em = int(compare_percentage_and_decimal(str(prediction), str(reference)))
+        else:
+            em = compute_exact(str(prediction), str(reference))
         f1 = compute_f1(str(prediction), str(reference))
         em_list.append(em)
         f1_list.append(f1)

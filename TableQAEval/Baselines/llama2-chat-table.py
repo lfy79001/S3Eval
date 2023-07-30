@@ -5,7 +5,7 @@ import pandas as pd
 import tiktoken
 import time
 import sys
-from transformers import AutoTokenizer, AutoModel
+from transformers import LlamaTokenizer, LlamaForCausalLM
 import torch
 sys.path.append('./')
 sys.path.append('../')
@@ -28,16 +28,13 @@ def num_tokens_from_string(table, tokenizer):
 
 
 def main(args):
-    device = 'cuda:0'
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16).to(device)
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
+    model = LlamaForCausalLM.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto")
     model = model.eval()
+    
+    B_INST, E_INST = "[INST]", "[/INST]"
+    B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-    header = (
-        "A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n"
-    )
-    sys_prompt = generate_sys_prompt(data['source'])
     
     with open(args.file_name, 'r') as file:
         json_data = json.load(file)    
@@ -45,7 +42,7 @@ def main(args):
     if args.mode == 'toy':
         json_data = json_data[:10]
     elif args.mode == 'baby':
-        json_data = json_data[600:650]
+        json_data = json_data[100:1000]
 
     preds = []
     golds = []
@@ -58,6 +55,8 @@ def main(args):
         elif args.format == 'flatten':
             pass
         table = table_str
+        
+        sys_prompt = generate_sys_prompt(data['source'])
 
 
         cnt = 0
@@ -75,10 +74,16 @@ def main(args):
             context = "Table is as follows. \n{} Question: {}".format(table, question)
         else:
             context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
-        
-        message = header + sys_prompt + context
 
-        response, history = model.chat(tokenizer, message, history=[], do_sample=False)
+        message = B_INST + B_SYS + sys_prompt + E_SYS + context + E_INST
+        
+        inputs = tokenizer(message, return_tensors="pt").to(0)
+
+        sample = model.generate(**inputs, do_sample=False, max_new_tokens=args.max_new_tokens)
+        prompt_length = inputs.input_ids.size()[-1]
+
+        output = tokenizer.decode(sample[0][prompt_length:])
+        response = output.replace('</s>', '')
         
         print(i, '[output]:', response, '[ground truth]:', data['answer'])
         
@@ -108,10 +113,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
-    parser.add_argument('--max_length', type=int, default=8000)
+    parser.add_argument('--max_length', type=int, default=3500)
     parser.add_argument('--max_new_tokens', type=int, default=1500)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
-    parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/chatglm2-6b')
+    parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/Llama-2-7b-chat-hf')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=6 python chatglm2-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=0,3,4 python llama2-chat-table.py --format markdown --mode baby

@@ -28,9 +28,8 @@ def num_tokens_from_string(table, tokenizer):
 
 
 def main(args):
-    device = 'cuda:0'
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16).to(device)
+    model = AutoModel.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto")
     model = model.eval()
 
     header = (
@@ -44,7 +43,7 @@ def main(args):
     if args.mode == 'toy':
         json_data = json_data[:10]
     elif args.mode == 'baby':
-        json_data = json_data[600:650]
+        json_data = json_data[100:1000]
 
     preds = []
     golds = []
@@ -74,10 +73,11 @@ def main(args):
         if data['source'] == 'structured':
             context = "Table is as follows. \n{} Question: {}".format(table, question)
         else:
-            context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
+            # context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
+            context = "Table is as follows. \n{}  Question: {}".format(table, question)
         
         message = header + sys_prompt + context
-        message = "hello"
+        
         response, history = model.chat(tokenizer, message, history=[], do_sample=False)
         
         print(i, '[output]:', response, '[ground truth]:', data['answer'])
@@ -108,10 +108,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
-    parser.add_argument('--max_length', type=int, default=8000)
+    parser.add_argument('--max_length', type=int, default=7000)
     parser.add_argument('--max_new_tokens', type=int, default=1500)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
     parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/chatglm2-6b')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=6 python chatglm2-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=0,2 python chatglm2-table.py --format markdown --mode baby
