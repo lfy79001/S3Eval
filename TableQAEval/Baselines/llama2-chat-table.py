@@ -114,9 +114,9 @@ if __name__ == '__main__':
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
     parser.add_argument('--max_length', type=int, default=3500)
-    parser.add_argument('--max_new_tokens', type=int, default=1500)
+    parser.add_argument('--max_new_tokens', type=int, default=200)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
     parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/Llama-2-7b-chat-hf')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=0,3,4 python llama2-chat-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=4,5,6,7,8 python llama2-chat-table.py --format markdown --mode baby

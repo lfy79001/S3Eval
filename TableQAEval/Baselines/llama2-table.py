@@ -119,4 +119,4 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/Llama-2-7b-hf')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=0,3,4 python llama2-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=0,1,6 python llama2-table.py --format markdown --mode baby

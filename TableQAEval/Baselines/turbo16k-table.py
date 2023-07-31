@@ -11,7 +11,7 @@ sys.path.append('./')
 sys.path.append('../')
 sys.path.append('../Evaluation')
 
-from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1
+from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, compare_percentage_and_decimal
 
 
 def generate_sys_prompt(source):
@@ -110,7 +110,10 @@ def main(args):
     numerical1, multihop1, structured1, total1 = [], [], [], []
     numerical2, multihop2, structured2, total2 = [], [], [], []
     for pred, gold, source in zip(preds, golds, sources):
-        em = compute_exact(str(pred), str(gold))
+        if '%' in str(pred):
+            em = int(compare_percentage_and_decimal(str(pred), str(gold)))
+        else:
+            em = compute_exact(str(pred), str(gold))
         f1 = compute_f1(str(pred), str(gold))
         if source == 'numerical':
             numerical1.append(em)

@@ -108,10 +108,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
-    parser.add_argument('--max_length', type=int, default=7000)
-    parser.add_argument('--max_new_tokens', type=int, default=1500)
+    parser.add_argument('--max_length', type=int, default=6000)
+    parser.add_argument('--max_new_tokens', type=int, default=200)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
     parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/chatglm2-6b')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=0,2 python chatglm2-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=2,3,4,5,6,7,8,9 python chatglm2-table.py --format markdown --mode baby
