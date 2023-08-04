@@ -11,7 +11,7 @@ sys.path.append('./')
 sys.path.append('../')
 sys.path.append('../Evaluation')
 
-from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, compare_percentage_and_decimal
+from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, save_results
 
 
 def generate_sys_prompt(source):
@@ -32,7 +32,7 @@ def main(args):
         json_data = json.load(file)    
     
     if args.mode == 'toy':
-        json_data = json_data[52:82]
+        json_data = json_data[:2]
     elif args.mode == 'baby':
         json_data = json_data[600:650]
     preds = []
@@ -40,7 +40,6 @@ def main(args):
     sources = []
     
     for i, data in enumerate(json_data):
-        
         if args.format == 'markdown':
             df = pd.DataFrame(data['contents'], columns=data['header'])
             table_str = df.to_markdown(headers=data['header'], tablefmt="pipe")
@@ -88,13 +87,10 @@ def main(args):
 
                 print(i, '[output]:', ret, '[ground truth]:', data['answer'])
                 
-                if data['source'] != 'numerical':
-                    # 查找"The answer is"在字符串中的位置
-                    start_index = ret.find('The answer is') + len('The answer is')
-                    # 提取剩余的内容
-                    result = ret[start_index:].strip('.')
-                else:
-                    result = ret
+                # 查找"The answer is"在字符串中的位置
+                start_index = ret.find('The answer is ') + len('The answer is ')
+                # 提取剩余的内容
+                result = ret[start_index:].strip('.')
                 
                 preds.append(result)
                 golds.append(data['answer'])
@@ -106,14 +102,13 @@ def main(args):
                 time.sleep(0.1)
         time.sleep(1.0)        
         ###########################################
-    # em_score, f1_score = compute_emf1(preds, golds)
+    import pdb; pdb.set_trace()
+    em_score, f1_score = compute_emf1(preds, golds)
+    print(f"total: em {em_score}, f1: {f1_score} ")
     numerical1, multihop1, structured1, total1 = [], [], [], []
     numerical2, multihop2, structured2, total2 = [], [], [], []
     for pred, gold, source in zip(preds, golds, sources):
-        if '%' in str(pred):
-            em = int(compare_percentage_and_decimal(str(pred), str(gold)))
-        else:
-            em = compute_exact(str(pred), str(gold))
+        em = compute_exact(str(pred), str(gold))
         f1 = compute_f1(str(pred), str(gold))
         if source == 'numerical':
             numerical1.append(em)
@@ -131,12 +126,12 @@ def main(args):
     if len(multihop1) > 0: print(f"multihop: em {sum(multihop1) / len(multihop1) * 100}, f1: {sum(multihop2) / len(multihop2) * 100} {len(multihop1)}")
     if len(structured1) > 0: print(f"structured: em {sum(structured1) / len(structured1) * 100}, f1: {sum(structured2) / len(structured2) * 100} {len(structured1)}")
     print(f"total: em {sum(total1) / len(total1) * 100}, f1: {sum(total2) / len(total2) * 100} {len(total2)}")
-  
+    save_results(preds, '../Results/turbo16k.txt')
         
     
 
 if __name__ == '__main__':
-    openai.api_key = "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"
+    openai.api_key = "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"
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)

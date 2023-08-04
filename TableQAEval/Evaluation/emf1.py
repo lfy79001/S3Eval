@@ -1,4 +1,4 @@
-import re, string, collections
+import re, string, collections, json
 
 def normalize_answer(s):
     """Lower text and remove punctuation, articles and extra whitespace."""
@@ -46,49 +46,34 @@ def compute_f1(a_gold, a_pred):
     return f1
 
 
-from decimal import Decimal
-
-def compare_percentage_and_decimal(str_percent, str_decimal, tolerance=0.01):
-    # 去除空格和逗号
-    str_percent = str_percent.replace(" ", "").replace(",", "")
-    str_decimal = str_decimal.replace(" ", "").replace(",", "")
-    
-    # 将百分数转换为小数
-    decimal_percent = Decimal(str_percent.strip("%")) / Decimal(100)
-    
-    # 将小数字符串转换为 Decimal 类型
-    decimal_decimal = Decimal(str_decimal)
-    
-    # 计算两个数之间的差异
-    diff = abs(decimal_percent - decimal_decimal)
-    
-    # 判断差异是否在容忍范围内
-    return diff <= Decimal(tolerance)
 
 
 def compute_emf1(predictions, references):
-
-    # half_correct =0
-    # for prediction, ground_truths in zip(predictions, references):
-    #     res = metric_max_over_ground_truths(exact_match_score, prediction, ground_truths)
-    #     exact_match += res
-    #     if res == 1:
-    #         correct +=1
-    #     if res == 0.25:
-    #         half_correct +=1
-    # print(f"There are {correct} correct answers \n {half_correct} can not select all correct options\n Total: {len(predictions)} questions.")
-    
     
     total = len(references)
     em_list = []
     f1_list = []
+    include_list = []
     for prediction, reference in zip(predictions, references):
-        if '%' in str(prediction):
-            em = int(compare_percentage_and_decimal(str(prediction), str(reference)))
-        else:
-            em = compute_exact(str(prediction), str(reference))
+        em = compute_exact(str(prediction), str(reference))
         f1 = compute_f1(str(prediction), str(reference))
         em_list.append(em)
         f1_list.append(f1)
-
+        if str(reference) in str(prediction):
+            include_list.append(1)
+        else:
+            include_list.append(0)
+    print(f"include score: {sum(include_list) / len(include_list)}")
     return sum(em_list) / total, sum(f1_list) / total
+
+
+def save_results(data, path):
+    with open(path, 'w') as f:
+        for item in data:
+            f.write(str(item) + '\n')
+        
+        
+def read_results(file_path):
+    with open(file_path, 'r') as f:
+        data_list = [line.strip() for line in f.readlines()]
+    return data_list

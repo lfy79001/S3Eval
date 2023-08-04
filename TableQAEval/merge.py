@@ -3,6 +3,9 @@ import random
 
 with open('TableQAEval_Encyclopedia.json') as file1, open('TableQAEval_SpreadSheet2.json') as file2, open('TableQAEval_StructuredQA.json') as file3:
     data1, data2, data3 = json.load(file1), json.load(file2), json.load(file3)
+data1 = data1[:300]
+data2 = data2[:300]
+data3 = data3[:400]
 print(len(data1), len(data2), len(data3))
 total_data = []
 for d1 in data1:
