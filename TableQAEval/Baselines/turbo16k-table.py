@@ -92,9 +92,6 @@ def main(args):
                 # 提取剩余的内容
                 result = ret[start_index:].strip('.')
                 
-                preds.append(result)
-                golds.append(data['answer'])
-                sources.append(data['source'])
                 break
             except Exception as e:  # add some logit here for retry
                 if isinstance(e, KeyboardInterrupt):
@@ -102,7 +99,9 @@ def main(args):
                 time.sleep(0.1)
         time.sleep(1.0)        
         ###########################################
-    import pdb; pdb.set_trace()
+        preds.append(result)
+        golds.append(data['answer'])
+        sources.append(data['source'])
     em_score, f1_score = compute_emf1(preds, golds)
     print(f"total: em {em_score}, f1: {f1_score} ")
     numerical1, multihop1, structured1, total1 = [], [], [], []

@@ -13,7 +13,7 @@ sys.path.append('./')
 sys.path.append('../')
 sys.path.append('../Evaluation')
 
-from Evaluation.emf1 import compute_emf1
+from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, save_results
 
 
 def generate_sys_prompt(source):
@@ -98,14 +98,12 @@ def replace_llama_with_condense(ratio):
 def main(args):
     
     replace_llama_with_condense(8)
+
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
     model = LlamaForCausalLM.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto")
     model = model.eval()
 
-    header = (
-        "A chat between a curious user and an artificial intelligence assistant."
-    "The assistant gives helpful, detailed, and polite answers to the user's questions."
-    )
+    header = ""
     
     with open(args.file_name, 'r') as file:
         json_data = json.load(file)    
@@ -117,7 +115,7 @@ def main(args):
 
     preds = []
     golds = []
-    
+    sources = []
     for i, data in enumerate(json_data):
         
         if args.format == 'markdown':
@@ -130,46 +128,78 @@ def main(args):
         sys_prompt = generate_sys_prompt(data['source'])
 
         cnt = 0
-        while num_tokens_from_string(table, tokenizer) > args.max_length:
-            table = " ".join(table.split()[:args.max_length - cnt]) # chunk the input len into 16k tokens
-            cnt += 200
-        
-        table_len = num_tokens_from_string(table, tokenizer)
+        if data['source'] == 'structured':
+            while num_tokens_from_string(table, tokenizer) > args.max_length:
+                table = " ".join(table.split()[:args.max_length - cnt]) # chunk the input len into 16k tokens
+                cnt += 200
+        else:
+            count = 0
+            while num_tokens_from_string(table + '\n ' + data['passage'], tokenizer) > args.max_length:
+                data['passage'] = " ".join(data['passage'].split()[:args.max_length - cnt]) # chunk the input len into 16k tokens
+                cnt += 200
+                count += 1
+                if count > 50:
+                    break
+            if count > 50:
+                cnt = 0
+                while num_tokens_from_string(table, tokenizer) > args.max_length:
+                    table = " ".join(table.split()[:args.max_length - cnt]) # chunk the input len into 16k tokens
+                    cnt += 200
 
         ###############################################    
         
         question = data['question']
         
         if data['source'] == 'structured':
-            context = "Table is as follows. \n{} Question: {}".format(table, question)
+            context = "Question: {} \nTable is as follows. \n{} \nQuestion: {}".format(question, table, question)
         else:
-            # context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
-            context = "Table is as follows. \n{}  Question: {}".format(table, question)
-        
-        message = header + " USER: " + sys_prompt + context + " Please directly give answer without any additonal output or explanation " +   " \nASSISTANT: "
-        
+            context = "Question: {} \nTable is as follows. \n{} \n Paragraph is as follows \n {}\nQuestion: {}".format(question, table, data['passage'], question)
+
+        message = header + " USER: " + sys_prompt + context + "Make sure the response is end with The answer is _ ." +   " \nASSISTANT: "
+
         inputs = tokenizer(message, return_tensors="pt").to(0)
         prompt_length = inputs.input_ids.size()[-1]
-        sample = model.generate(inputs.input_ids.to(model.device), do_sample=False, max_new_tokens=512, use_cache=True)[0]
+        sample = model.generate(inputs.input_ids.to(model.device), do_sample=False, max_new_tokens=20, use_cache=True)[0]
         response = tokenizer.decode(sample[prompt_length:], skip_special_tokens=True)
         
         print(i, '[output]:', response, '[ground truth]:', data['answer'])
         
-        if data['source'] != 'numerical':
-            # 查找"The answer is"在字符串中的位置
-            start_index = response.find('The answer is') + len('The answer is')
-            # 提取剩余的内容
+        # 查找"The answer is"在字符串中的位置
+        start_index = response.find('The answer is') + len('The answer is')
+        # 提取剩余的内容
+        if start_index != -1:
             result = response[start_index:].strip('.')
         else:
             result = response
         
         preds.append(result)
         golds.append(data['answer'])
-
+        sources.append(data['source'])
         ###########################################
     em_score, f1_score = compute_emf1(preds, golds)
-
-    print(f"em: {em_score}, f1: {f1_score}")
+    print(f"total: em {em_score}, f1: {f1_score} ")
+    numerical1, multihop1, structured1, total1 = [], [], [], []
+    numerical2, multihop2, structured2, total2 = [], [], [], []
+    for pred, gold, source in zip(preds, golds, sources):
+        em = compute_exact(str(pred), str(gold))
+        f1 = compute_f1(str(pred), str(gold))
+        if source == 'numerical':
+            numerical1.append(em)
+            numerical2.append(f1)
+        elif source == 'multihop':
+            multihop1.append(em)
+            multihop2.append(f1)
+        elif source == 'structured':
+            structured1.append(em)
+            structured2.append(f1)
+        total1.append(em)
+        total2.append(f1)
+    
+    if len(numerical1) > 0: print(f"numerical: em {sum(numerical1) / len(numerical1) * 100}, f1: {sum(numerical2) / len(numerical2) * 100} {len(numerical1)}")
+    if len(multihop1) > 0: print(f"multihop: em {sum(multihop1) / len(multihop1) * 100}, f1: {sum(multihop2) / len(multihop2) * 100} {len(multihop1)}")
+    if len(structured1) > 0: print(f"structured: em {sum(structured1) / len(structured1) * 100}, f1: {sum(structured2) / len(structured2) * 100} {len(structured1)}")
+    print(f"total: em {sum(total1) / len(total1) * 100}, f1: {sum(total2) / len(total2) * 100} {len(total2)}")
+    save_results(preds, '../Results/longchat.txt')
     
   
         
@@ -187,4 +217,4 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/longchat-7b-16k')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=5,6,7,8,9 python longchat-table.py --format markdown --mode baby
+    # CUDA_VISIBLE_DEVICES=1,2,7,8 python longchat-table.py --format markdown --mode baby

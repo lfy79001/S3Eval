@@ -5,7 +5,7 @@ import pandas as pd
 import tiktoken
 import time
 import sys
-from transformers import AutoTokenizer, AutoModel
+from transformers import LlamaTokenizer, AutoModelForCausalLM
 import torch
 sys.path.append('./')
 sys.path.append('../')
@@ -13,14 +13,13 @@ sys.path.append('../Evaluation')
 
 from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, save_results
 
-
 def generate_sys_prompt(source):
     if source == 'multihop':
-        return 'Give you a table, and the paragraphs related to it, and the corresponding questions. You need to answer the questions according to the table and paragraph. Make sure the response is end with The answer is _ .'
+        return 'Give you a table, and the paragraphs related to it, and the corresponding questions. You need to answer the questions according to the table and paragraph. '
     elif source == 'numerical':
-        return 'Give you a table, and the paragraphs related to it, and the corresponding questions. You need to reason and calculate numerical problems to obtain answers. Make sure the response is end with The answer is _ .'
+        return 'Give you a table, and the paragraphs related to it, and the corresponding questions. You need to reason and calculate numerical problems to obtain answers. '
     elif source == 'structured':
-        return 'Give you a table and the corresponding question. You need to answer the questions according to the table. Make sure the response is end with The answer is _ '
+        return 'Give you a table and the corresponding question. You need to answer the questions according to the table. '
 
 
 def num_tokens_from_string(table, tokenizer):
@@ -28,14 +27,13 @@ def num_tokens_from_string(table, tokenizer):
 
 
 def main(args):
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto")
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(args.model_path, torch_dtype=torch.float32, trust_remote_code=True, device_map="auto")
     model = model.eval()
+    
+    B_INST, E_INST = "[INST]", "[/INST]"
+    B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-    header = (
-        "A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n"
-    )
     
     with open(args.file_name, 'r') as file:
         json_data = json.load(file)    
@@ -43,7 +41,7 @@ def main(args):
     if args.mode == 'toy':
         json_data = json_data[:10]
     elif args.mode == 'baby':
-        json_data = json_data[14:]
+        json_data = json_data[100:1000]
 
     preds = []
     golds = []
@@ -58,6 +56,7 @@ def main(args):
         table = table_str
         
         sys_prompt = generate_sys_prompt(data['source'])
+
 
         cnt = 0
         if data['source'] == 'structured':
@@ -86,14 +85,27 @@ def main(args):
             context = "Table is as follows. \n{} Question: {}".format(table, question)
         else:
             context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
-        
-        message = header + sys_prompt + context
 
-        response, history = model.chat(tokenizer, message, history=[], do_sample=False)
+        message = sys_prompt + context + "You need to answer the question based on the table and paragraph above. Answer:"
+
+        inputs = tokenizer(message, return_tensors="pt").to(0)
+
+        generation_output = model.generate(
+            input_ids=inputs.input_ids,
+            max_new_tokens=50,
+            num_beams=1,
+            last_context_length=1792,
+            do_sample=True,
+            temperature=1.0,
+        )
+
+        prompt_length = inputs.input_ids.size()[-1]
+
+        output = tokenizer.decode(generation_output[0][prompt_length:])
+        response = output.replace('</s>', '')
         
         print(i, '[output]:', response, '[ground truth]:', data['answer'])
         
-
         # 查找"The answer is"在字符串中的位置
         start_index = response.find('The answer is') + len('The answer is')
         # 提取剩余的内容
@@ -130,8 +142,7 @@ def main(args):
     if len(multihop1) > 0: print(f"multihop: em {sum(multihop1) / len(multihop1) * 100}, f1: {sum(multihop2) / len(multihop2) * 100} {len(multihop1)}")
     if len(structured1) > 0: print(f"structured: em {sum(structured1) / len(structured1) * 100}, f1: {sum(structured2) / len(structured2) * 100} {len(structured1)}")
     print(f"total: em {sum(total1) / len(total1) * 100}, f1: {sum(total2) / len(total2) * 100} {len(total2)}")
-    save_results(preds, '../Results/chatglm2.txt')
-    
+    save_results(preds, '../Results/llama2.txt')
     
   
         
@@ -143,10 +154,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
-    parser.add_argument('--max_length', type=int, default=5500)
+    parser.add_argument('--max_length', type=int, default=7000)
     parser.add_argument('--max_new_tokens', type=int, default=50)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
-    parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/chatglm2-6b')
+    parser.add_argument('--model_path', type=str, default='syzymon/long_llama_3b_instruct')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=2,3,4,5,6,7,8 python chatglm2-table.py --format markdown --mode full
+    # CUDA_VISIBLE_DEVICES=2,3,4,5,6 python longllama-table.py --format markdown --mode full

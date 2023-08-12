@@ -5,14 +5,13 @@ import pandas as pd
 import tiktoken
 import time
 import sys
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 sys.path.append('./')
 sys.path.append('../')
 sys.path.append('../Evaluation')
 
 from Evaluation.emf1 import compute_emf1, compute_exact, compute_f1, save_results
-
 
 def generate_sys_prompt(source):
     if source == 'multihop':
@@ -29,9 +28,9 @@ def num_tokens_from_string(table, tokenizer):
 
 def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(args.model_path, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto")
+    model = AutoModelForCausalLM.from_pretrained(args.model_path, torch_dtype=torch.bfloat16, device_map="auto")
     model = model.eval()
-
+    
     header = (
         "A chat between a curious human and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n"
@@ -43,7 +42,7 @@ def main(args):
     if args.mode == 'toy':
         json_data = json_data[:10]
     elif args.mode == 'baby':
-        json_data = json_data[14:]
+        json_data = json_data[100:1000]
 
     preds = []
     golds = []
@@ -74,7 +73,7 @@ def main(args):
                     break
             if count > 50:
                 cnt = 0
-                while num_tokens_from_string(table + '\n ' + data['passage'], tokenizer) > args.max_length:
+                while num_tokens_from_string(table, tokenizer) > args.max_length:
                     table = " ".join(table.split()[:args.max_length - cnt]) # chunk the input len into 16k tokens
                     cnt += 200
 
@@ -87,13 +86,16 @@ def main(args):
         else:
             context = "Table is as follows. \n{} \n Passage is as follows \n {}Question: {}".format(table, data['passage'], question)
         
-        message = header + sys_prompt + context
-
-        response, history = model.chat(tokenizer, message, history=[], do_sample=False)
+        message = header + " ### Human: " + sys_prompt + context + " \n### Assistant:"
         
-        print(i, '[output]:', response, '[ground truth]:', data['answer'])
+        inputs = tokenizer(message, return_tensors="pt").to(0)
+        sample = model.generate(**inputs, do_sample=False, max_new_tokens=100)
+        prompt_length = inputs.input_ids.size()[-1]
+        output = tokenizer.decode(sample[0][prompt_length:])
+        response = output.strip().replace("<|endoftext|>", '').replace("### Assistant:", '').strip()
         
-
+        print('[output]:', response, '[ground truth]:', data['answer'])
+        
         # 查找"The answer is"在字符串中的位置
         start_index = response.find('The answer is') + len('The answer is')
         # 提取剩余的内容
@@ -130,7 +132,7 @@ def main(args):
     if len(multihop1) > 0: print(f"multihop: em {sum(multihop1) / len(multihop1) * 100}, f1: {sum(multihop2) / len(multihop2) * 100} {len(multihop1)}")
     if len(structured1) > 0: print(f"structured: em {sum(structured1) / len(structured1) * 100}, f1: {sum(structured2) / len(structured2) * 100} {len(structured1)}")
     print(f"total: em {sum(total1) / len(total1) * 100}, f1: {sum(total2) / len(total2) * 100} {len(total2)}")
-    save_results(preds, '../Results/chatglm2.txt')
+    save_results(preds, '../Results/xgen.txt')
     
     
   
@@ -143,10 +145,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--format', choices=["markdown", "flatten"], required=True)
     parser.add_argument('--file_name', type=str, default='../TableQAEval.json')
-    parser.add_argument('--max_length', type=int, default=5500)
-    parser.add_argument('--max_new_tokens', type=int, default=50)
+    parser.add_argument('--max_length', type=int, default=3500)
+    parser.add_argument('--max_new_tokens', type=int, default=20)
     parser.add_argument('--mode', choices=["toy", "baby", "full"])
-    parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/chatglm2-6b')
+    parser.add_argument('--model_path', type=str, default='/home/lfy/PTM/xgen-7b-8k-inst')
     args = parser.parse_args()
     main(args)
-    # CUDA_VISIBLE_DEVICES=2,3,4,5,6,7,8 python chatglm2-table.py --format markdown --mode full
+    # CUDA_VISIBLE_DEVICES=6,7,8,9 python xgen-table.py --format markdown --mode baby
