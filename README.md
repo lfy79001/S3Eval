@@ -115,5 +115,64 @@ Template or General
 `template` mode can also be used, but this template is slightly more difficult to write. can be used when testing long-context, see template template/long.txt
 
 
+## Examples
+for example, if you want to generate `where` SQL with easy level, you have two options
+
+__Method1:Change `sql_config` to this__
+```bash
+{
+  "nest": [1],
+  "keywords_setting": { 
+    "select": true,      
+    "where": true,
+    "group by": false,
+    "having": false,
+    "order by": false
+  },
+  "length_setting": {
+    "is_available": false,
+    "value": [],
+    "min": 6,
+    "max": 16
+  },
+  "column_ratio": {
+    "is_available": false,
+    "value": [],
+    "min": 0.1,
+    "max": 0.3
+  },
+  "select_row_ratio":{
+    "is_available": false,
+    "value": [],
+    "min": 0.1,
+    "max": 0.2
+  },
+  "calculate_times": {
+    "is_available": true,
+    "value": [0]
+  },
+  "filter_times": {
+    "is_available": false,
+    "value": [1,2,3,4,5]
+  },
+  "answer_location": {
+    "is_available": false,
+    "value": null,
+    "min": 0.1,
+    "max": 0.9
+  },
+  "answer_cells_number": 1,
+  "include": [],
+  "exclude": []
+
+}
+```
+__Method2: Direct use template file `template/easy.txt`__
+
+This approach has low SQL diversity
+
+You have to change the `synthetic_mode` for `general` to `template`
+
+
 
 
