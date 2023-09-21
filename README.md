@@ -47,7 +47,7 @@ python synthetic.py \
   --data_mode eval \ # data format styles, 'eval' is more commonly used. Changes are not recommended.
 ```
 
-If you want to change the database config
+If you want to change the database config     
 ```bash
 // database_config.json
 {
