@@ -38,7 +38,7 @@ python synthetic.py \
   --new_db True \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
   --total_number 1000 \   # How many training data do you want to generate
   --each_table_number  50 \  # How much training data do you want to generate on one table
-  --database_config ./config/database_config.json \ # Fine-grained config for form properties
+  --database_config ./config/database_config.json \ # Fine-grained config for table properties
   --sql_config ./config/sql_config.json \ #   # The most important file, SQL Config File
   --synthetic_mode general \ # general: Standard diverse SQL generation methods(recommended). template: Custom SQL template generation.
   --template  ./template/general.json  \  # SQL grammar/template location
