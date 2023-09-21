@@ -20,7 +20,6 @@ SQLEval is a platform for Large Language Model Evaluation (especially for LLM di
 
 # ⚙️ Start
 
-## 
 To quickly start, you just run this scripts to generate tables and sqls.
 ```bash
 bash run.sh
