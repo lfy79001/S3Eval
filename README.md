@@ -1,5 +1,7 @@
 # SQLEval: A diagnositic benchmark for Large Language Model
 
+<插入LOGO>
+
 # 🔥 Updates
 
 - [**2023-9-30**]: We released our [code](https://github.com/lfy79001/SQLEval)
