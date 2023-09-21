@@ -120,7 +120,7 @@ def select_condition(text_cols, int_cols):
     else:    
         select_col = random.choice(text_cols + int_cols)
         # 没有agg，直接返回选中行
-        if random_with_weight([True, False], [0.6, 0.4]):
+        if random_with_weight([True, False], [0.7, 0.3]):
             select_part = select_col
             select_cols = [select_col]
             select_instruction = f"Select values of {select_col} column in filtered rows."
