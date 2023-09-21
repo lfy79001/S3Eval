@@ -24,4 +24,6 @@ sqls = [ data['examples'][0]['sql'] for data in json_data]
 
 save_txt(path.replace('.json','.txt'), sqls)
 
+print(f"save to {path.replace('.json','.txt')}")
+
 
