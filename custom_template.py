@@ -25,12 +25,6 @@ def control_sql(header, contents, sql, answer, process, details, sql_config):
     if len(intersection) != 0:
         return False
 
-    
-    # depth筛选
-    if sql_config['sql_depth']['is_available']:
-        depth = calculate_depth(contents, process, sql)
-        if depth not in sql_config['sql_depth']['value']:
-            return False
 
     # length 筛选
     if sql_config['length_setting']['is_available']:
@@ -255,7 +249,7 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
             if not control_sql(header, contents, new_sql[i], new_answer[i], process, details, sql_config):
                 continue
             multiturn = generate_multiturn(details, header)
-            new_dict['multiturn'] = multiturn
+            new_dict['multiturn'] = ''.join(multiturn)
             new_data.append(new_dict)
             
         
