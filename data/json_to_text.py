@@ -1,4 +1,7 @@
 import json
+import sys
+
+
 
 def read_jsonl(path):
     total_data = []
@@ -13,7 +16,7 @@ def save_txt(path, data):
         for line in data:
             file.write(line + '\n')
 
-path = 'db1_500_23_general.json'
+path = sys.argv[1]
 json_data = read_jsonl(path)
 
 

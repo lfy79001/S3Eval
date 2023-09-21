@@ -25,6 +25,12 @@ To quickly start, you just run this scripts to generate tables and sqls.
 bash run.sh
 ```
 
+If you want to visualize the generated data, you can use this code to convert json to txt
+```bash
+python data/json_to_text.py <generated_data_path>
+```
+
+
 ```bash
 # parameter introduction
 python synthetic.py \
