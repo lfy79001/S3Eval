@@ -420,6 +420,10 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, data_mod
             continue
         
         if control_sql_general(header, contents, query, answer, col_dict, select_rows_list, sql_config):
+            if sql_config["answer_cells_number"] == 1:
+                answer = str(answer[0][0])
+            elif sql_config["answer_cells_number"] > 1:
+                answer = ','.join([str(item[0]) for item in answer])
             queries.append({"sql":query, "answer":answer, "multiturn": instruction})
         
     
