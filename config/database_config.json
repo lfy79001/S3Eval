@@ -2,5 +2,6 @@
   "col_min": 5,
   "col_max": 8,
   "row_min": 15,
-  "row_mas": 40
+  "row_max": 40,
+  "text_int_date": [0.55, 0.35, 0.1]
 }

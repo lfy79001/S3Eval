@@ -467,5 +467,5 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, data_mod
             
 
     output_data = output_data[:num_queries]  
-    print(f"Requires:{num_queries*10}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:{len(output_data)}") 
+    print(f"Sample:{num_queries*10}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:{len(output_data)}") 
     return output_data

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import string
 from value_utils import has_duplicates, random_string, random_strings, random_int, random_float, generate_random_date, generate_random_date_of_birth, random_date_between
 import re
+from value_utils import read_json
 sql_keywords = ['select', 'insert', 'update', 'delete', 'create', 'alter', 'drop', 'truncate', 'from', 'where', 'join', 'on', 'group by', 'order by', 'having', 'distinct', 'as', 'case', 'when', 'then', 'else', 'end', 'and', 'or', 'not', 'null', 'is', 'in', 'between', 'like', 'exists', 'count', 'sum', 'avg', 'max', 'min', 'union', 'intersect', 'except', 'commit', 'rollback', 'savepoint', 'grant', 'revoke', 'index', 'constraint', 'primary key', 'group', 'foreign', 'primary', 'key','foreign key', 'references', 'unique', 'check', 'default','order','values']
 # 获取所有名词
 nouns = {x.name().split('.', 1)[0] for x in wn.all_synsets('n') if re.match(r'^[a-zA-Z]+$', x.name().split('.', 1)[0]) and x.name().split('.', 1)[0] not in sql_keywords}
@@ -105,14 +106,17 @@ def generate_random_column_name():
         if 3 <= len(random_noun) < 9:
             return random_noun
 
-def generate_random_column_type():
+def generate_random_column_type(weights):
     elements = ['TEXT', 'INT', 'DATE']
-    weights = [0.55, 0.35, 0.1]
     chosen_element = random.choices(elements, weights)[0]
     return chosen_element
 
 
-def generate_table(args, table_path,column_number,row_number):
+def generate_table(args, table_path,column_number, row_number):
+    # 读取database config文件 col_min max, 
+    database_config = read_json(args.database_config)
+    
+    
     table_name = 'my_table'
     conn = sqlite3.connect(table_path)
     # 创建游标对象
@@ -125,7 +129,7 @@ def generate_table(args, table_path,column_number,row_number):
     
     header_type = []
     while True:
-        header_type = [generate_random_column_type() for _ in range(column_number)]
+        header_type = [generate_random_column_type(database_config['text_int_date']) for _ in range(column_number)]
         if header_type.count('TEXT') != 0 and header_type.count('INT') != 0:
             break   
 

@@ -39,7 +39,7 @@ def main(args):
 
         # 读取database config文件 col_min max, 
         database_config = read_json(args.database_config)
-
+        
         # 表格的行列范围 
         column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
         row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
@@ -109,11 +109,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--db_path', type=str, default='./db/db1')
-    parser.add_argument('--new_db', type=bool, default=False)
-    parser.add_argument('--total_number', type=int, default=500)
+    parser.add_argument('--new_db', type=bool, default=True)
+    parser.add_argument('--total_number', type=int, default=1000)
     parser.add_argument('--each_table_number', type=int, default=50)
-    parser.add_argument('--sql_config', type=str, default='./config/sql_config.json')
     parser.add_argument('--database_config', type=str, default='./config/database_config.json')
+    parser.add_argument('--sql_config', type=str, default='./config/sql_config.json')
     parser.add_argument('--synthetic_mode', choices=['template', 'general'], default='general')
     parser.add_argument('--template', type=str, default='./template/general.json')
     parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
