@@ -27,7 +27,8 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
             return False
 
     # 对keyword做操作
-    exclude_keywords = [key for key, value in sql_config.items() if value is False]
+    exclude_keywords = [key for key, value in sql_config['keywords_setting'].items() if value is False]
+
     for keyword in exclude_keywords:
         if keyword in sql:
             return False
@@ -102,7 +103,7 @@ def select_condition(text_cols, int_cols):
     select_agg = ""
     
     # 设置 “四则运算” 为select_col  
-    if random_with_weight([True, False], [0.1, 0.9]):
+    if random_with_weight([True, False], [0.05, 0.95]):
         select_col1, select_col2 = random.choices(int_cols, k=2)
         cal_ops = ['+', '-', '*', '/']
         cal_op = random_with_weight(cal_ops, [0.5,0.3,0.1,0.1]) 
@@ -120,7 +121,7 @@ def select_condition(text_cols, int_cols):
     else:    
         select_col = random.choice(text_cols + int_cols)
         # 没有agg，直接返回选中行
-        if random_with_weight([True, False], [0.7, 0.3]):
+        if random_with_weight([True, False], [0.8, 0.2]):
             select_part = select_col
             select_cols = [select_col]
             select_instruction = f"Select values of {select_col} column in filtered rows."
@@ -370,7 +371,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, data_mod
         return f'{select_col} {op}'
 
     queries = []
-    for _ in tqdm(range(num_queries*10)):
+    for _ in tqdm(range(num_queries*8)):
         # s代表一个select，d代表二个select，t代表三个select
         id, query = random_dict_key_value(new_templates)
         if id.startswith('s'):
