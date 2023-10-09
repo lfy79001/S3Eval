@@ -6,11 +6,11 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔥 Updates
 
-- [**2023-9-30**]: We released our [code](https://github.com/lfy79001/SQLEval)
+- [**2023-10-10**]: We released our [code](https://github.com/lfy79001/SQLEval)
 
 # 🔧 Task
 <p align="center">
-<img src="figs/pipeline.png" width="512">
+<img src="figs/pipeline.png">
 </p>
 
 
@@ -178,5 +178,12 @@ This approach has low SQL diversity
 You have to change the `synthetic_mode` for `general` to `template`
 
 
+
+
+# Leadboard
+
+<p align="center">
+<img src="figs/Leardboard.png">
+</p>
 
 
