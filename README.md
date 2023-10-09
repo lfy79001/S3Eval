@@ -2,7 +2,7 @@
 
 <插入LOGO>
 
-The official repository which contains the code and data for our paper S3Eval: A **S**ynthetic, **S**calable and **S**ystematic Suite for Evaluating Language Models.
+The official repository which contains the code and data for our paper **S3Eval**: A **S**ynthetic, **S**calable and **S**ystematic Suite for Evaluating Language Models.
 
 # 🔥 Updates
 
