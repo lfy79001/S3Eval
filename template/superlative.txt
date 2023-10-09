@@ -1,0 +1,6 @@
+select <int_col1> from my_table order by <int_col1> asc limit 1
+select <int_col1> from my_table order by <int_col1> desc limit 1
+select <text_col1> from my_table order by <int_col1> asc limit 1
+select <text_col1> from my_table order by <int_col1> desc limit 1
+select <int_col1> from my_table order by <int_col2> asc limit 1
+select <int_col1> from my_table order by <int_col2> desc limit 1

@@ -6,12 +6,12 @@ import pandas as pd
 import sqlite3
 from custom_template_parser import generate_process, generate_multiturn
 from custom_template_parser import cover_column, cover_row, calculate_depth, calculate_times
+from table_utils import execute_sql
 
 
 
 
-
-def control_sql(header, contents, sql, answer, process, details, sql_config):
+def control_sql(header, contents, sql, answer, process, details, sql_config, table_path):
     row_num = len(contents)
     col_num = len(contents[0])
     
@@ -44,7 +44,7 @@ def control_sql(header, contents, sql, answer, process, details, sql_config):
             if select_col_num not in sql_config['column_ratio']['value']:
                 return False
         else:
-            if not (sql_config['column_ratio']['min'] <= select_col_num / col_num <= sql_config['column_ratio']['max']):
+            if not (sql_config['column_ratio']['min'] <= select_col_num / col_num < sql_config['column_ratio']['max']):
                 return False
 
     # select_row_ratio
@@ -54,22 +54,45 @@ def control_sql(header, contents, sql, answer, process, details, sql_config):
             if select_row_num not in sql_config['select_row_ratio']['value']:
                 return False
         else:
-            if not (sql_config['select_row_ratio']['min'] <= select_row_num / row_num <= sql_config['select_row_ratio']['max']):
+            if not (sql_config['select_row_ratio']['min'] < select_row_num / row_num <= sql_config['select_row_ratio']['max']):
                 return False
     
     # calculate times
-    if sql_config['select_row_ratio']['is_available']:
+    if sql_config['calculate_times']['is_available']:
         time = calculate_times(process, sql)
-        if time not in sql_config['select_row_ratio']['value']:
+        if time not in sql_config['calculate_times']['value']:
             return False
+
+    def replace_chars(s, start_index, end_index, origin, new):
+        return s[:start_index] + s[start_index:end_index].replace(origin, new) + s[end_index:]
     
+    # answer location
     if sql_config['answer_location']['is_available']:
-        row_index, _ = find_element_position(contents, answer)
-        if not ( sql_config['answer_location']['min'] <= row_index / row_num <= sql_config['answer_location']['max']):
-            return False
-    
-    if any(item not in sql for item in sql_config['include']):
-        return False
+        row_index, col_index = 0, 0
+        if details['select'][1] in ['count', 'min', 'max', 'sum', 'avg']:
+            agg = details['select'][1]
+            non_agg_sql = replace_chars(sql, 0, 30, f'{agg} (', '')
+            non_agg_sql = replace_chars(non_agg_sql, 0, 30, f')', '')
+            try:
+                output = execute_sql(table_path, non_agg_sql)
+            except:
+                import pdb; pdb.set_trace()
+            row_index, col_index = find_element_position(contents, output[0][0])
+        else:
+            row_index, col_index = find_element_position(contents, answer)
+        
+        if len(sql_config['answer_location']['row_value']) != 0:
+            if row_index not in sql_config['answer_location']['row_value']:
+                return False
+        if len(sql_config['answer_location']['column_value']) != 0:
+            if col_index not in sql_config['answer_location']['column_value']:
+                return False
+        else:
+            if not ( sql_config['answer_location']['min'] < row_index / row_num <= sql_config['answer_location']['max']):
+                return False
+        
+    # if len(set(sql.split(' ')).intersection(set(sql_config['include']))) == 0:
+    #     return False
     
     if any(item in sql for item in sql_config['exclude']):
         return False
@@ -80,15 +103,15 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
     header, contents, types = read_table(table_path)
 
     queries = []        
-    
-    for _ in tqdm(range(num_queries*5)):
+    multiple = 10
+    for _ in tqdm(range(num_queries*multiple)):
         query = random.choice(sql_templates)
 
         text_col = [col for col, col_type in zip(header, types) if col_type in ['TEXT', 'DATE']]
         int_col = [col for col, col_type in zip(header, types) if col_type in ['INT']]
         # nn = random.sample(text_col, k=2)
 
-        op = ['=', '>', '<']
+        op = ['>', '<', '=']
         # col = int_col + text_col
         query = ' '.join(query)
         
@@ -98,17 +121,23 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
             query.replace('<op2>', '=')
         if '<text_col3> <op3> <text_3>' in query:
             query.replace('<op3>', '=')
-    
-        
-        int_col1 = random.choice(int_col)
-        if len(int_col) > 1:
-            int_col.remove(int_col1)
-        int_col2 = random.choice(int_col)
-        if len(int_col) > 1:
-            int_col.remove(int_col2)
-        int_col3 = random.choice(int_col)
-    
-        text_col1 = random.choice(text_col)
+        if '<text_col4> <op4> <text_4>' in query:
+            query.replace('<op3>', '=')
+
+        if int_col != []:
+            int_col1 = random.choice(int_col)
+            if len(int_col) > 1:
+                int_col.remove(int_col1)
+            int_col2 = random.choice(int_col)
+            if len(int_col) > 1:
+                int_col.remove(int_col2)
+            int_col3 = random.choice(int_col)
+        else:
+            int_col1, int_col2, int_col3 = "", "", ""
+        if sql_config["answer_location"]["is_available"]:
+            text_col1 = text_col[sql_config["answer_location"]["column_value"][0]]
+        else:
+            text_col1 = random.choice(text_col)
         if len(text_col) > 1:
             text_col.remove(text_col1)
         text_col2 = random.choice(text_col)
@@ -157,30 +186,47 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
         query = query.replace('<op2>', random.choice(op))
         query = query.replace('<op3>', random.choice(op))
         query = query.replace('<op4>', random.choice(op))
-        
+
         r_dict = {
             '<int_1>': int_col1,
             '<int_2>': int_col2,
             '<int_3>': int_col3,
             '<text_1>': text_col1,
             '<text_2>': text_col2,
-            '<text_3>': text_col3
+            '<text_3>': text_col3,
+            '<text_4>': text_col4
         }
         
+
         for key in r_dict.keys():
             if key in query:
                 count_number = count_substring_occurrences(query, key)
-                if count_number > 1:
-                    if 'int' in key:
-                        query = query.replace(key, str(random.choice(contents)[header.index(r_dict[key])]))
+                if sql_config["answer_location"]["is_available"] and len(sql_config["answer_location"]["row_value"]) != 0:
+                    row_index = sql_config["answer_location"]["row_value"][0]
+                    if count_number > 1:
+                        if 'int' in key:
+                            query = query.replace(key, str(contents[row_index][header.index(r_dict[key])]))
+                        else:
+                            query = query.replace(key, f"'{str(contents[row_index][header.index(r_dict[key])])}'")
                     else:
-                        query = query.replace(key, f"'{str(random.choice(contents)[header.index(r_dict[key])])}'")
+                        if 'int' in key:
+                            replacement_list = [str(contents[row_index][header.index(r_dict[key])]) for _ in range(count_number)]
+                        else:
+                            replacement_list = [f"'{str(contents[row_index][header.index(r_dict[key])])}'" for _ in range(count_number)]
+                        query = replace_substring_occurrences(query, key, replacement_list)
                 else:
-                    if 'int' in key:
-                        replacement_list = [str(random.choice(contents)[header.index(r_dict[key])]) for _ in range(count_number)]
+                    text_col1 = random.choice(text_col)
+                    if count_number > 1:
+                        if 'int' in key:
+                            query = query.replace(key, str(random.choice(contents)[header.index(r_dict[key])]))
+                        else:
+                            query = query.replace(key, f"'{str(random.choice(contents)[header.index(r_dict[key])])}'")
                     else:
-                        replacement_list = [f"'{str(random.choice(contents)[header.index(r_dict[key])])}'" for _ in range(count_number)]
-                    query = replace_substring_occurrences(query, key, replacement_list)
+                        if 'int' in key:
+                            replacement_list = [str(random.choice(contents)[header.index(r_dict[key])]) for _ in range(count_number)]
+                        else:
+                            replacement_list = [f"'{str(random.choice(contents)[header.index(r_dict[key])])}'" for _ in range(count_number)]
+                        query = replace_substring_occurrences(query, key, replacement_list)
 
         queries.append(query)
         
@@ -246,8 +292,35 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
             new_dict['sql'] = new_sql[i]
             new_dict['answer'] = new_answer[i]
             process, details = generate_process(header, contents, new_sql[i], table_path)
-            if not control_sql(header, contents, new_sql[i], new_answer[i], process, details, sql_config):
+            if not control_sql(header, contents, new_sql[i], new_answer[i], process, details, sql_config, table_path):
                 continue
+
+            if sql_config["multi_test"]:
+                select_where = new_sql[i].split('where')[0] + 'where'
+                condition1 = new_sql[i].split('where')[1].split('and')[0]
+                condition2 = new_sql[i].split('where')[1].split('and')[1]
+                sql1 = select_where + condition1
+                sql2 = select_where + condition2
+              
+                try:
+                    cursor.execute(sql1)
+                except:
+                    continue
+                answer1 = cursor.fetchall()
+                if len(answer1) < 2 or len(answer1) > 5:
+                    continue
+                try:
+                    cursor.execute(sql2)
+                except:
+                    continue
+                answer2 = cursor.fetchall()
+                if len(answer2) < 2 or len(answer2) > 5:
+                    continue
+                new_dict["sql1"] = sql1
+                new_dict["sql2"] = sql2
+                new_dict["answer1"] = answer1
+                new_dict["answer2"] = answer2
+            
             multiturn = generate_multiturn(details, header)
             new_dict['multiturn'] = ''.join(multiturn)
             new_data.append(new_dict)
@@ -263,10 +336,15 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
                 sql_set.add(item['sql'])
                 
 
-        n_shot = 5
+        n_shot = sql_config['n_shot']
         examples = []
-        for i in range(n_shot):
-            examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multiturn':final_data[i]['multiturn']})
+        # import pdb; pdb.set_trace()
+        try:
+            for i in range(n_shot):
+                examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multiturn':final_data[i]['multiturn']})
+        except:
+            print(len(new_sql), len(new_data), len(final_data)) 
+            return [] 
         
         output_data = []
         for data in final_data[n_shot:]:
@@ -275,6 +353,8 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
             new_dict['contents'] = contents
             data_examples = [{'sql': data['sql'], 'answer':data['answer'], 'multiturn':data['multiturn']}]
             new_dict['examples'] = data_examples + examples
+            if sql_config["multi_test"]:
+                new_dict['subsql'] = {'sql1':data['sql1'], 'answer1':data['answer1'], 'sql2':data['sql2'], 'answer2':data['answer2']}
             output_data.append(new_dict)
 
         output_data = output_data[:num_queries]   

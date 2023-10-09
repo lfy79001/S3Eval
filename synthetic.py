@@ -4,7 +4,7 @@ import random
 import json
 import shutil
 from table_utils import generate_table, insert_random_values
-from value_utils import random_int, read_json, read_jsonl, read_txt
+from value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
 from general import general_queries
 from custom_template import template_queries
 
@@ -59,6 +59,7 @@ def main(args):
                 output = generate_table(args, table_path,column_number,row_number)
                 if output != 0:
                     break   
+            
             # 表格中插入随机值 
             insert_random_values(args, table_path, column_number, row_number)
             
@@ -92,7 +93,10 @@ def main(args):
     # 保存生成的数据
     random.shuffle(data)
     print(len(data))
-    save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{random_int()}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
+    if args.des == '':
+        save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{random_big_int()}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
+    else:
+        save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{args.des}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
     with open(save_path, 'w') as f:
         for item in data:
             json.dump(item, f)
@@ -109,7 +113,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--db_path', type=str, default='./db/db1')
-    parser.add_argument('--new_db', type=bool, default=True)
+    parser.add_argument('--new_db', type=int, default=1)
     parser.add_argument('--total_number', type=int, default=1000)
     parser.add_argument('--each_table_number', type=int, default=50)
     parser.add_argument('--database_config', type=str, default='./config/database_config.json')
@@ -117,5 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('--synthetic_mode', choices=['template', 'general'], default='general')
     parser.add_argument('--template', type=str, default='./template/general.json')
     parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
+    parser.add_argument('--des', type=str, default='')
     args = parser.parse_args()
+
     main(args)

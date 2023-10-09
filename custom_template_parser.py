@@ -150,11 +150,11 @@ def find_position(header, contents, sql, keyword, db_path):
             result = re.search(r"(select.*)", sql)
         if result:
             sql = result.group(1).strip()
-        if any(agg in select_item for agg in aggregate_word):
+        if any(" "+agg+" " in select_item for agg in aggregate_word):
             agg = None
             non_agg_sql = sql
             for item in aggregate_word:
-                if item in non_agg_sql:
+                if " "+item+" " in non_agg_sql:
                     non_agg_sql = replace_chars(non_agg_sql, 0, 30, f'{item} (', '')
                     agg = item
             non_agg_sql = replace_chars(non_agg_sql, 0, 30, f')', '')
@@ -290,7 +290,8 @@ def generate_process(header, contents, sql, path):
             try:
                 output, detail = find_position(header, contents, sql, keyword, path)
             except:
-                import pdb; pdb.set_trace()
+                output = []
+                detail = []
             process[keyword] = output
             details[keyword] = detail
     return process, details

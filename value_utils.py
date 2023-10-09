@@ -22,6 +22,8 @@ def random_strings(number):
 
 def random_int():
     return random.randint(2, 327)
+def random_big_int():
+    return random.randint(2, 1000)
 
 def random_float():
     random_float = random.uniform(1.1, 20.0)
@@ -95,6 +97,11 @@ def save_txt(path, data):
 
 def random_with_weight(elements, weights):
     return random.choices(elements, weights=weights, k=1)[0]
+
+def random_double(strings, weights):
+    result = [string for string, weight in zip(strings, weights) for _ in range(weight)]
+    random.shuffle(result)
+    return result
 
 def random_dict_key(my_dict):
     random_key = random.choice(list(my_dict.keys()))
