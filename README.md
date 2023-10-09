@@ -9,7 +9,9 @@ The official repository which contains the code and data for our paper **S3Eval*
 - [**2023-9-30**]: We released our [code](https://github.com/lfy79001/SQLEval)
 
 # 🔧 Task
-<插入一张任务示例图>
+<p align="center">
+<img src="figs/dataset_examples.png" width="512">
+</p>
 
 The benchmark have two main tasks: __SQL execution__ and __SQL language insturction__.
 
