@@ -1,4 +1,4 @@
-# SQLEval: A diagnositic benchmark for Large Language Model
+# S3Eval: A Synthetic, Scalable and Systematic Suite for Evaluating Language Models
 
 <插入LOGO>
 
