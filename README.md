@@ -2,6 +2,7 @@
   <img src="figs/logo.png" border="0" width="512"/>
   <br />
   <br />
+</div>
 
 
 # S3Eval: A Synthetic, Scalable and Systematic Suite for Evaluating Language Models
