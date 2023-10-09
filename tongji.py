@@ -13,7 +13,6 @@ import sys
 from transformers import AutoTokenizer
 
 
-
 def read_jsonl(path):
     total_data = []
     with open(path, 'r') as f:

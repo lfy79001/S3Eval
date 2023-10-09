@@ -1,6 +1,6 @@
 {
   "nest": [1],
-  "select_grammar": ["s"],
+  "select_grammar": [],
   "keywords_setting": { 
     "select": true,      
     "where": true,

@@ -9,8 +9,6 @@ from custom_template_parser import cover_column, cover_row, calculate_depth, cal
 from table_utils import execute_sql
 
 
-
-
 def control_sql(header, contents, sql, answer, process, details, sql_config, table_path):
     row_num = len(contents)
     col_num = len(contents[0])

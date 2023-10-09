@@ -11,7 +11,6 @@ from table_utils import execute_sql, transform_output_to_tablestr, generate_inte
 code_english = {'>': 'greater than', '<': 'less than', '=': 'less than', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
 
-
 def control_sql_general(header, contents, sql, answer, col_dict, select_rows_list, sql_config):
     # 如果没有控制条件，直接返回True
     if not sql_config:

@@ -12,6 +12,7 @@ nouns = {x.name().split('.', 1)[0] for x in wn.all_synsets('n') if re.match(r'^[
 import pandas as pd
 import shutil
 
+
 def read_table(table_path):
     table_name = 'my_table'
     conn = sqlite3.connect(table_path)

@@ -8,7 +8,6 @@ def has_duplicates(lst):
     # 使用集合（set）来判断列表中的元素是否唯一
     return len(lst) != len(set(lst))
 
-
 def random_string():
     letters = string.ascii_lowercase
     length = random.randint(4,9)

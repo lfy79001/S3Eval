@@ -8,7 +8,6 @@ from value_utils import random_int, read_json, read_jsonl, read_txt, random_big_
 from general import general_queries
 from custom_template import template_queries
 
-
 def main(args):
     # 判断db文件夹是否存在
     if args.new_db:
