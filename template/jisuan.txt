@@ -1,1 +1,0 @@
-select <text_col1> from my_table where <int_col1> <op1> <int_1>
