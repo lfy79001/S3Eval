@@ -10,10 +10,10 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔧 Task
 <p align="center">
-<img src="figs/dataset_examples.png" width="512">
+<img src="figs/pipeline.png" width="512">
 </p>
 
-The benchmark have two main tasks: __SQL execution__ and __SQL language insturction__.
+
 
 
 # ✨ Features
