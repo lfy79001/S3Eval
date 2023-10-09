@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="figs/logo.png" border="0" width="512"/>
+  <br />
+  <br />
+
+
 # S3Eval: A Synthetic, Scalable and Systematic Suite for Evaluating Language Models
 
 <插入LOGO>
