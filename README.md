@@ -19,7 +19,16 @@ The official repository which contains the code and data for our paper **S3Eval*
 </p>
 
 
-# Benchmark Alignment
+# ✨ Features
+SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis. It has the following features:
+- **Reasoning**: SQL contains a rich grammar in which each keyword implies a different reasoning capability, and SQLEval can effectively test model reasoning capabilities.
+- **Long-Context Understanding**: The difficulty of long text evaluation is how to collect meaningful texts and tasks, our work can theoretically evaluate any long-context capability of any LLM context windows length. 
+- **Controllable Analysis**: This platform allows fine-grained control of data generation. Such as detailed attributes of the table, fine-grained difficulty control of the generated SQL, and so on. Users have the flexibility to use it to explore more features of LLM.
+- **Dynamic without data leakage**: Randomly construct synthetic data that has never been seen by LLMs, which greatly alleviates data leakage problem in LLM evaluation.
+
+
+# Some Insight
+## Benchmark Alignment
 
 <div style="display: flex;">
   <img src="figs/BBH_general.png" style="width: 40%;" />
@@ -30,13 +39,12 @@ We use exact match (EM) metric as our evaluation function. And we consider the P
 
 The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows the alignment between S3Eval and HumanEval.
 
+## Long-Context Analysis
+<div align="center">
+  <img src="figs/long_context.png" width="50%" />
+</div>
 
-# ✨ Features
-SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis. It has the following features:
-- **Reasoning**: SQL contains a rich grammar in which each keyword implies a different reasoning capability, and SQLEval can effectively test model reasoning capabilities.
-- **Long-Context Understanding**: The difficulty of long text evaluation is how to collect meaningful texts and tasks, our work can theoretically evaluate any long-context capability of any LLM context windows length. 
-- **Controllable Analysis**: This platform allows fine-grained control of data generation. Such as detailed attributes of the table, fine-grained difficulty control of the generated SQL, and so on. Users have the flexibility to use it to explore more features of LLM.
-- **Dynamic without data leakage**: Randomly construct synthetic data that has never been seen by LLMs, which greatly alleviates data leakage problem in LLM evaluation.
+We can clearly figure out that the performance of almost all LLMs, on S3Eval, decreases significantly as context length increasing.
 
 
 # ⚙️ Start
