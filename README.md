@@ -32,7 +32,7 @@ The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows 
 
 
 # ✨ Features
-SQLEval is a platform for Large Language Model Evaluation (especially for LLM diagnositic). It has the following features:
+SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis. It has the following features:
 - **Reasoning**: SQL contains a rich grammar in which each keyword implies a different reasoning capability, and SQLEval can effectively test model reasoning capabilities.
 - **Long-Context Understanding**: The difficulty of long text evaluation is how to collect meaningful texts and tasks, our work can theoretically evaluate any long-context capability of any LLM context windows length. 
 - **Controllable Analysis**: This platform allows fine-grained control of data generation. Such as detailed attributes of the table, fine-grained difficulty control of the generated SQL, and so on. Users have the flexibility to use it to explore more features of LLM.
