@@ -2,6 +2,9 @@
   <img src="figs/logo.png" border="0" width="512"/>
   <br />
   <br />
+
+
+[🤗Huggingface Datasets](https://huggingface.co/S3Eval)
 </div>
 
 
@@ -11,7 +14,7 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔥 Updates
 
-- [**2023-10-10**]: We released our [code](https://github.com/lfy79001/SQLEval)
+- [**2023-10-10**]: We released our [code](https://github.com/lfy79001/SQLEval) and [paper].
 
 # 🔧 Task
 <p align="center">
@@ -46,7 +49,20 @@ The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows 
 
 We can clearly figure out that the performance of almost all LLMs, on S3Eval, decreases significantly as context length increasing.
 
+<div align="center">
+  <img src="figs/neighbor.png" width="50%" />
+</div>
+
+It shows that existing long context extension methods, while improving performance on sliding windows, perform poorly on modelling of a truly global nature. 
+
 ## Answer position analysis
+
+<div style="display: flex;">
+    <img src="figs/gpt_group.png" style="width:25%;" alt="Image 1">
+    <img src="figs/gpt_dot.png" style="width:25%;" alt="Image 2">
+    <img src="figs/llama_group.png" style="width:25%;" alt="Image 3">
+    <img src="figs/llama_dot.png" style="width:25%;" alt="Image 4">
+</div>
 
 
 # ⚙️ Start

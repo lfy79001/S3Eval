@@ -1,0 +1,4 @@
+select <text_col1> from my_table where <int_col1> = <int_1>
+select <int_col1> from my_table where <text_col1> = <text_1>
+select <int_col1> from my_table where <int_col2> = <int_2>
+select <text_col1> from my_table where <text_col2> = <text_2>

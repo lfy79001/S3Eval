@@ -1,0 +1,16 @@
+{
+    "s1": "select <select_condition> from my_table",
+    "s2": "select <select_condition> from my_table <where_condition>",
+    "s3": "select <select_condition> from my_table <order_condition>",
+    "s4": "select <select_condition> from my_table <where_condition> <order_condition>",
+    "s5": "select <select_condition> from my_table <group_condition> <having_condition>",
+    "s6": "select <select_condition> from my_table <where_condition> <group_condition> <having_condition>",
+    "s7": "select <select_condition> from my_table <where_condition> <group_condition> <having_condition> <order_condition>",
+    "s8": "select <select_condition> from my_table <group_condition> <having_condition> <order_condition>",
+    "d1": "select ( [s1,s2] ) <op_and_value>",
+    "d2": "select <select_condition> from my_table where <col_and_op> ( [s1,s2,s3,s4] )",
+    "d3": "select <select_condition> from my_table where <col_and_op> ( [s1,s2,s3] ) <order_condition>",
+    "d4": "select <select_condition> from my_table <where_condition> and <col_and_op> ( [s1,s2,s3,s4] )",
+    "t1": "select ( [s1,s2,s3] ) <op> ( [s1,s2,s3] )"
+}
+
