@@ -30,8 +30,8 @@ SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis.
 # Some Insight
 ## Benchmark Alignment
 
-<div style="display: flex;">
-  <img src="figs/BBH_general.png" style="width: 40%;" />
+<div style="display: flex; justify-content: center;">
+  <img src="figs/BBH_general.png" style="width: 40%; margin-right: 20px;" />
   <img src="figs/code_general_human.png" style="width: 40%;" />
 </div>
 
@@ -45,6 +45,8 @@ The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows 
 </div>
 
 We can clearly figure out that the performance of almost all LLMs, on S3Eval, decreases significantly as context length increasing.
+
+## Answer position analysis
 
 
 # ⚙️ Start
