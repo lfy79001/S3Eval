@@ -22,8 +22,8 @@ The official repository which contains the code and data for our paper **S3Eval*
 # Benchmark Alignment
 
 <div style="display: flex;">
-  <img src="figs/BBH_general.png" style="width: 50%;" />
-  <img src="figs/code_general_human.png" style="width: 50%;" />
+  <img src="figs/BBH_general.png" style="width: 40%;" />
+  <img src="figs/code_general_human.png" style="width: 40%;" />
 </div>
 
 We use exact match (EM) metric as our evaluation function. And we consider the Pearson correlation coefficient (r) and the Kendall rank correlation coefficient (τ) as our correlation functions. 
