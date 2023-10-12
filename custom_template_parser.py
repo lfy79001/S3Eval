@@ -1,7 +1,6 @@
 import re
 from table_utils import execute_sql
 
-
 def generate_multiturn(details, header):
     def find_column(seq):
         if "*" in seq:

@@ -9,6 +9,8 @@ from custom_template_parser import cover_column, cover_row, calculate_depth, cal
 from table_utils import execute_sql
 
 
+
+
 def control_sql(header, contents, sql, answer, process, details, sql_config, table_path):
     row_num = len(contents)
     col_num = len(contents[0])
@@ -78,13 +80,18 @@ def control_sql(header, contents, sql, answer, process, details, sql_config, tab
             row_index, col_index = find_element_position(contents, output[0][0])
         else:
             row_index, col_index = find_element_position(contents, answer)
-        
+
         if len(sql_config['answer_location']['row_value']) != 0:
             if row_index not in sql_config['answer_location']['row_value']:
                 return False
         if len(sql_config['answer_location']['column_value']) != 0:
-            if col_index not in sql_config['answer_location']['column_value']:
-                return False
+            if isinstance(col_index, list):
+                for index in col_index:
+                    if index not in sql_config['answer_location']['column_value']:
+                        return False
+            else:
+                if col_index not in sql_config['answer_location']['column_value']:
+                    return False
         else:
             if not ( sql_config['answer_location']['min'] < row_index / row_num <= sql_config['answer_location']['max']):
                 return False
@@ -97,11 +104,11 @@ def control_sql(header, contents, sql, answer, process, details, sql_config, tab
     
     return True
 
-def template_queries(sql_templates, num_queries, table_path, sql_config, data_mode='ft'):
+def template_queries(sql_templates, num_queries, table_path, sql_config, multiple, data_mode='ft'):
     header, contents, types = read_table(table_path)
 
     queries = []        
-    multiple = 10
+    
     for _ in tqdm(range(num_queries*multiple)):
         query = random.choice(sql_templates)
 
@@ -246,10 +253,19 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
         answer = cursor.fetchall()
         if answer is None:
             continue
-        if len(answer) == 1:
-            count += 1
-            new_sql.append(sql)
-            new_answer.append(str(answer[0][0]))
+        answer_cells_number = 1
+        if sql_config["answer_cells_number"]:
+            answer_cells_number = sql_config["answer_cells_number"]
+        if answer_cells_number == 1:      
+            if len(answer) == answer_cells_number:
+                count += 1
+                new_sql.append(sql)
+                new_answer.append(str(answer[0][0]))
+        else:
+            if len(answer) == answer_cells_number:
+                count += 1
+                new_sql.append(sql)
+                new_answer.append([item[0] for item in answer])
 
 
     if data_mode == 'ft':
@@ -358,6 +374,7 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, data_mo
         output_data = output_data[:num_queries]   
         print(len(new_sql), len(new_data), len(output_data))    
         return output_data
+
 
 
 

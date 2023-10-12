@@ -11,6 +11,7 @@ from table_utils import execute_sql, transform_output_to_tablestr, generate_inte
 code_english = {'>': 'greater than', '<': 'less than', '=': 'less than', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
 
+
 def control_sql_general(header, contents, sql, answer, col_dict, select_rows_list, sql_config):
     # 如果没有控制条件，直接返回True
     if not sql_config:
@@ -41,6 +42,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
             gold_length = sql_config['length_setting']['value']
         else:
             gold_length = list(range(sql_config['length_setting']['min'], sql_config['length_setting']['max']+1))
+
         if sql_length not in gold_length:
             return False
 
@@ -315,7 +317,7 @@ def group_condition(header, contents, text_cols, int_cols):
         
     
      
-def general_queries(sql_templates, num_queries, table_path, sql_config, data_mode='ft'):
+def general_queries(sql_templates, num_queries, table_path, sql_config, multiple, data_mode='ft'):
     header, contents, types = read_table(table_path)
     text_cols = [col for col, col_type in zip(header, types) if col_type in ['TEXT', 'DATE']]
     int_cols = [col for col, col_type in zip(header, types) if col_type in ['INT']]
@@ -487,7 +489,6 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, data_mod
         return f'{select_col} {op}'
 
     queries = []
-    multiple = 5
     for _ in tqdm(range(num_queries*multiple)):
         # s代表一个select，d代表二个select，t代表三个select
         id, query = random_dict_key_value(new_templates)
@@ -567,9 +568,16 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, data_mod
             sql_set.add(query['sql'])
 
     # 输出数据
+    if data_mode == 'eval' and len(final_data) <= sql_config['n_shot']:
+        print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:0") 
+        return []
+    elif data_mode == 'ft' and len(final_data) == 0:
+        print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:0") 
+        return []
+        
     output_data = []
     if data_mode == 'eval':
-        n_shot = 5
+        n_shot = sql_config['n_shot']
         examples = []
         for i in range(n_shot):
             examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multiturn':final_data[i]['multiturn'], "col_dict":final_data[i]['col_dict'], "select_rows_list": final_data[i]['select_rows_list'], "sql_cot": final_data[i]['sql_cot']})
