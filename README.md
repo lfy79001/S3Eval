@@ -19,6 +19,16 @@ The official repository which contains the code and data for our paper **S3Eval*
 </p>
 
 
+# Benchmark Alignment
+
+<div style="display: flex;">
+  <img src="figs/BBH_general.png" style="width: 50%;" />
+  <img src="figs/code_general_human.png" style="width: 50%;" />
+</div>
+
+We use exact match (EM) metric as our evaluation function. And we consider the Pearson correlation coefficient (r) and the Kendall rank correlation coefficient (τ) as our correlation functions. 
+
+The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows the alignment between S3Eval and HumanEval.
 
 
 # ✨ Features
