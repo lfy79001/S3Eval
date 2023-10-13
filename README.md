@@ -28,6 +28,7 @@ SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis.
 - **Long-Context Understanding**: The difficulty of long text evaluation is how to collect meaningful texts and tasks, our work can theoretically evaluate any long-context capability of any LLM context windows length. 
 - **Controllable Analysis**: This platform allows fine-grained control of data generation. Such as detailed attributes of the table, fine-grained difficulty control of the generated SQL, and so on. Users have the flexibility to use it to explore more features of LLM.
 - **Dynamic without data leakage**: Randomly construct synthetic data that has never been seen by LLMs, which greatly alleviates data leakage problem in LLM evaluation.
+- **Customizable**: Users can use their own xlsx/csv tables to generate SQL of any complexity.
 
 
 # Some Insight
@@ -158,6 +159,17 @@ Template or General
 `general` mode is recommended to use, cause it has more grammar. You only need to control the config, or simply control the file.
 
 `template` mode can also be used, but this template is slightly more difficult to write. can be used when testing long-context, see template template/long.txt
+
+If you want to general SQLs with your own xlsx/csv tables, Use the following steps:
+```
+python convert_csv.py --db_path <new_db_files_path> --csv_path <your_tables_folder_path> 
+python systhetic.py --new_db 0 --db_path <new_db_files_path>
+// Other setting is the same as normal
+
+```
+
+
+
 
 
 ## Examples

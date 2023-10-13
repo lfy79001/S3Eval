@@ -145,7 +145,10 @@ def main(args):
             examples = data['examples']
             fewshot_input = ""
             for example in examples[1:args.n_shot+1]:
-                fewshot_input += "SQL:{}\nAnswer:{}\n".format(example['sql'], example['answer'])
+                new_answer = example['answer']
+                if isinstance(example['answer'], list):
+                    new_answer = ','.join(example['answer'])
+                fewshot_input += "SQL:{}\nAnswer:{}\n".format(example['sql'], new_answer)
             fewshot_input += f"SQL:{examples[0]['sql']}\nAnswer:"
             gold_answer = examples[0]['answer']
             input_prompt = input_format.format(table, fewshot_input)

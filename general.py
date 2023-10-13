@@ -551,7 +551,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
             if sql_config["answer_cells_number"] == 1:
                 answer = str(answer[0][0])
             elif sql_config["answer_cells_number"] > 1:
-                answer = ','.join([str(item[0]) for item in answer])
+                answer = [str(item[0]) for item in answer]
             queries.append({"sql":query, "answer":answer, "multiturn": instruction, "col_dict":col_dict, "select_rows_list": select_rows_list, "sql_cot": sql_cot})
         
     
