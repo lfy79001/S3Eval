@@ -352,7 +352,7 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, multipl
 
         n_shot = sql_config['n_shot']
         examples = []
-        # import pdb; pdb.set_trace()
+
         try:
             for i in range(n_shot):
                 examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multiturn':final_data[i]['multiturn']})

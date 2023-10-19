@@ -552,8 +552,17 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
                 answer = str(answer[0][0])
             elif sql_config["answer_cells_number"] > 1:
                 answer = [str(item[0]) for item in answer]
-            queries.append({"sql":query, "answer":answer, "multiturn": instruction, "col_dict":col_dict, "select_rows_list": select_rows_list, "sql_cot": sql_cot})
-        
+            output_dict = {}
+            output_dict["sql"] = query
+            output_dict["answer"] = answer
+            if sql_config["output_config"]["process"]:
+                output_dict["col_dict"] = col_dict
+                output_dict["select_rows_list"] = select_rows_list
+            if sql_config["output_config"]["multistep"]:
+                output_dict["multistep"] = instruction
+            if sql_config["output_config"]["cot"]:
+                output_dict["sql_cot"] = sql_cot
+            queries.append(output_dict)
     
     
     
@@ -580,13 +589,13 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
         n_shot = sql_config['n_shot']
         examples = []
         for i in range(n_shot):
-            examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multiturn':final_data[i]['multiturn'], "col_dict":final_data[i]['col_dict'], "select_rows_list": final_data[i]['select_rows_list'], "sql_cot": final_data[i]['sql_cot']})
+            examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multistep':final_data[i]['multistep'], "col_dict":final_data[i]['col_dict'], "select_rows_list": final_data[i]['select_rows_list'], "sql_cot": final_data[i]['sql_cot']})
 
         for data in final_data[n_shot:]:
             new_dict = {}
             new_dict['header'] = header
             new_dict['contents'] = contents
-            data_examples = [{'sql': data['sql'], 'answer':data['answer'], 'multiturn':data['multiturn'], 'col_dict':data['col_dict'], 'select_rows_list':data['select_rows_list'], "sql_cot":data['sql_cot']}]
+            data_examples = [{'sql': data['sql'], 'answer':data['answer'], 'multistep':data['multistep'], 'col_dict':data['col_dict'], 'select_rows_list':data['select_rows_list'], "sql_cot":data['sql_cot']}]
             new_dict['examples'] = data_examples + examples
             output_data.append(new_dict)      
                 

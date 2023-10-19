@@ -45,6 +45,10 @@
   "multi_test": false,
   "include": [],
   "exclude": [],
-  "n_shot": 5
-
+  "n_shot": 5,
+  "output_config":{
+    "process": false,
+    "multistep": false,
+    "cot": false
+  }
 }

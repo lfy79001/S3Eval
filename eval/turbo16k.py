@@ -137,8 +137,8 @@ def main(args):
             examples = data['examples']
             fewshot_input = ""
             for example in examples[1:args.n_shot+1]:
-                fewshot_input += "Instruction:{}\nAnswer:{}\n".format(example['multiturn'], example['answer'])
-            fewshot_input += f"Instruction:{examples[0]['multiturn']}\nAnswer:"
+                fewshot_input += "Instruction:{}\nAnswer:{}\n".format(example['multistep'], example['answer'])
+            fewshot_input += f"Instruction:{examples[0]['multistep']}\nAnswer:"
             gold_answer = examples[0]['answer']
             input_prompt = input_format.format(table, fewshot_input)
         elif args.task == 'sql':
