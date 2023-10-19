@@ -55,12 +55,12 @@ def main(args):
         
         # 生成表格schema
         while True:
-            output = generate_table(args, table_path,column_number,row_number)
+            output = generate_table(database_config, table_path,column_number,row_number)
             if output != 0:
                 break   
         
         # 表格中插入随机值 
-        insert_random_values(args, table_path, column_number, row_number)
+        insert_random_values(database_config, table_path, column_number, row_number)
         
         multiple = 5
         while True:
@@ -104,12 +104,12 @@ def main(args):
             
             # 生成表格schema
             while True:
-                output = generate_table(args, table_path,column_number,row_number)
+                output = generate_table(database_config, table_path,column_number,row_number)
                 if output != 0:
                     break   
             
             # 表格中插入随机值 
-            insert_random_values(args, table_path, column_number, row_number)
+            insert_random_values(database_config, table_path, column_number, row_number)
             
             # 根据该template生成SQL语句
             if args.synthetic_mode == 'template':

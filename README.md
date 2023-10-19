@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="figs/logo.png" border="0" width="512"/>
+  <img src="./figs/logo.png" border="0" width="512"/>
   <br />
   <br />
 
@@ -18,7 +18,7 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔧 Task
 <p align="center">
-<img src="figs/pipeline.png">
+<img src="./figs/pipeline.png">
 </p>
 
 
@@ -35,8 +35,8 @@ SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis.
 ## Benchmark Alignment
 
 <div style="display: flex; justify-content: center;">
-  <img src="figs/BBH_general.png" style="width: 40%; margin-right: 20px;" />
-  <img src="figs/code_general_human.png" style="width: 40%;" />
+  <img src="./figs/BBH_general.png" style="width: 40%; margin-right: 20px;" />
+  <img src="./figs/code_general_human.png" style="width: 40%;" />
 </div>
 
 We use exact match (EM) metric as our evaluation function. And we consider the Pearson correlation coefficient (r) and the Kendall rank correlation coefficient (τ) as our correlation functions. 
@@ -45,13 +45,13 @@ The results show strong alignment between S3Eval and BBH. For CodeLLM, it shows 
 
 ## Long-Context Analysis
 <div align="center">
-  <img src="figs/long_context.png" width="50%" />
+  <img src="./figs/long_context.png" width="50%" />
 </div>
 
 We can clearly figure out that the performance of almost all LLMs, on S3Eval, decreases significantly as context length increasing.
 
 <div align="center">
-  <img src="figs/neighbor.png" width="50%" />
+  <img src="./figs/neighbor.png" width="50%" />
 </div>
 
 It shows that existing long context extension methods, while improving performance on sliding windows, perform poorly on modelling of a truly global nature. 
@@ -66,9 +66,21 @@ It shows that existing long context extension methods, while improving performan
 </div>
 
 
-# ⚙️ Start
+# ⚙️ Quickstart
 
-To quickly start, you just run this scripts to generate tables and sqls.
+```bash
+python quick_start.py
+```
+```python
+s3eval = S3Eval("general") # general,easy,long2k,long4k
+output_path = "./data/general1.json"
+data = s3eval.generate_data(500, output_path) # total_number, output_path
+```
+
+
+# Detail Control
+
+You just run this scripts to generate tables and sqls.
 ```bash
 bash run.sh
 ```

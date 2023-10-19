@@ -35,7 +35,7 @@ def read_table(table_path):
 
     return header, contents, types
 
-def insert_random_values(args, table_path,column_number,row_number):
+def insert_random_values(database_config, table_path,column_number,row_number):
     table_name = 'my_table'
 
     conn = sqlite3.connect(table_path)
@@ -53,7 +53,6 @@ def insert_random_values(args, table_path,column_number,row_number):
     column_types = [column[2] for column in columns]
 
     placeholders = ', '.join(['?'] * len(column_names))
-    database_config = read_json(args.database_config)
 
     rs = RandomString(column_types, row_number, database_config)
     for i in range(row_number):
@@ -131,9 +130,8 @@ def generate_random_column_type(weights):
     return chosen_element
 
 
-def generate_table(args, table_path,column_number, row_number):
+def generate_table(database_config, table_path,column_number, row_number):
     # 读取database config文件 col_min max, 
-    database_config = read_json(args.database_config)
     
     
     table_name = 'my_table'
@@ -152,8 +150,8 @@ def generate_table(args, table_path,column_number, row_number):
             header_type = database_config["text_int_date_fix"]
         else:
             header_type = [generate_random_column_type(database_config['text_int_date']) for _ in range(column_number)]
-        # if args.synthetic_mode == 'template' or (header_type.count('TEXT') != 0 and header_type.count('INT') != 0):
-        if (header_type.count('TEXT') != 0 and header_type.count('INT') != 0):
+
+        if (header_type.count('TEXT') != 0 and header_type.count('INT') != 0) or (database_config["text_int_date"].count(0)==2):
             break   
 
     column_definitions = ', '.join(f'{header_name[i]} {header_type[i]}' for i in range(len(header_name)))

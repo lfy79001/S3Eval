@@ -1,0 +1,9 @@
+{
+    "col_min": 5,
+    "col_max": 5,
+    "row_min": 30,
+    "row_max": 30,
+    "text_int_date": [1, 0, 0],
+    "value_repeat_ratio": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+}
+  

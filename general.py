@@ -589,13 +589,14 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
         n_shot = sql_config['n_shot']
         examples = []
         for i in range(n_shot):
-            examples.append({'sql':final_data[i]['sql'], 'answer':final_data[i]['answer'], 'multistep':final_data[i]['multistep'], "col_dict":final_data[i]['col_dict'], "select_rows_list": final_data[i]['select_rows_list'], "sql_cot": final_data[i]['sql_cot']})
+            new_dict = final_data[i]
+            examples.append(new_dict)
 
         for data in final_data[n_shot:]:
             new_dict = {}
             new_dict['header'] = header
             new_dict['contents'] = contents
-            data_examples = [{'sql': data['sql'], 'answer':data['answer'], 'multistep':data['multistep'], 'col_dict':data['col_dict'], 'select_rows_list':data['select_rows_list'], "sql_cot":data['sql_cot']}]
+            data_examples = [data]
             new_dict['examples'] = data_examples + examples
             output_data.append(new_dict)      
                 
