@@ -2,9 +2,6 @@
   <img src="./figs/logo.png" border="0" width="512"/>
   <br />
   <br />
-
-
-[🤗Huggingface Datasets](https://huggingface.co/S3Eval)
 </div>
 
 
