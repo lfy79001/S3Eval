@@ -246,7 +246,7 @@ You have to change the `synthetic_mode` for `general` to `template`
 
 
 
-# Leadboard
+# Leardboard
 
 <p align="center">
 <img src="figs/Leardboard.png">
