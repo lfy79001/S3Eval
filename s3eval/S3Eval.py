@@ -49,9 +49,15 @@ class S3Eval:
             elif data_type == "long16k":
                 self.database_config["row_min"] = 290
                 self.database_config["row_max"] = 290
-            elif data_type == "long20k":
-                self.database_config["row_min"] = 290
-                self.database_config["row_max"] = 290
+            elif data_type == "long32k":
+                self.database_config["row_min"] = 600
+                self.database_config["row_max"] = 600
+            elif data_type == "long64k":
+                self.database_config["row_min"] = 1200
+                self.database_config["row_max"] = 1200
+            elif data_type == "long128k":
+                self.database_config["row_min"] = 2400
+                self.database_config["row_max"] = 2400
             
 
         if process: self.sql_config["output_config"]["process"] = True

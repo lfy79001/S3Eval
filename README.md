@@ -75,7 +75,7 @@ bash requirements.sh
 python quick_start.py
 ```
 ```python
-s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k
+s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k,long16k,long32k,long64k,long128k
 output_path = "./data/general1.json"
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
