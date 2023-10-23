@@ -76,7 +76,7 @@ python quick_start.py
 ```
 ```python
 s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k,long16k,long32k,long64k,long128k
-output_path = "./data/general1.json"
+output_path = "./data/general1.json"  # Custom output file name
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
 Using this code, you can easily generate the same setting data as in the paper.
