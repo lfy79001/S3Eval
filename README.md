@@ -64,12 +64,12 @@ It shows that existing long context extension methods, while improving performan
 
 # ⚙️ Quickstart
 
-#### Install required packages
+### Install required packages
 ```bash
 bash requirements.sh
 ```
 
-#### Generate data
+### Generate data
 ```bash
 python quick_start.py
 ```
@@ -163,13 +163,13 @@ If you want to change the sql config
 }
 ```
 
-#### Template or General
+### Template or General
 
 `general` mode is recommended to use, cause it has more grammar. You only need to control the config, or simply control the file.
 
 `template` mode can also be used, but this template is slightly more difficult to write. can be used when testing long-context, see template template/long.txt
 
-#### Your own tables
+### Your own tables
 
 If you want to general SQLs with your own xlsx/csv tables, Use the following steps:
 ```bash
