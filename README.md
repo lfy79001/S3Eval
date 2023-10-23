@@ -72,24 +72,18 @@ It shows that existing long context extension methods, while improving performan
 python quick_start.py
 ```
 ```python
-s3eval = S3Eval("general") # general,easy,long2k,long4k
+s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k
 output_path = "./data/general1.json"
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
+Using this code, you can quickly generate the same setting data as in the paper.
 
-
-# Detail Control
+# 🔧 Detailed data generation method 😳
 
 You just run this scripts to generate tables and sqls.
 ```bash
 bash run.sh
 ```
-
-If you want to visualize the generated data, you can use this code to convert json to txt
-```bash
-python data/json_to_text.py <generated_data_path>
-```
-
 
 ```bash
 # parameter introduction
