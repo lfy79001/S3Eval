@@ -158,18 +158,21 @@ If you want to change the sql config
 }
 ```
 
-Template or General
+#### Template or General
 
 `general` mode is recommended to use, cause it has more grammar. You only need to control the config, or simply control the file.
 
 `template` mode can also be used, but this template is slightly more difficult to write. can be used when testing long-context, see template template/long.txt
 
-If you want to general SQLs with your own xlsx/csv tables, Use the following steps:
-```
-python convert_csv.py --db_path <new_db_files_path> --csv_path <your_tables_folder_path> 
-python systhetic.py --new_db 0 --db_path <new_db_files_path>
-// Other setting is the same as normal
+#### Your own tables
 
+If you want to general SQLs with your own xlsx/csv tables, Use the following steps:
+```bash
+# convert xlsx/csv tables to sqlite3
+python convert_csv.py --db_path <new_db_files_path> --csv_path <your_tables_folder_path> 
+# generate data
+python systhetic.py --new_db 0 --db_path <new_db_files_path>
+# Other setting is the same as normal
 ```
 
 
