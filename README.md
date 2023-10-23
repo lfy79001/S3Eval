@@ -31,10 +31,11 @@ SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis.
 # Some Insight
 ## Benchmark Alignment
 
-<div style="display: flex; justify-content: center;">
-  <img src="./figs/BBH_general.png" style="width: 40%; margin-right: 20px;" />
-  <img src="./figs/code_general_human.png" style="width: 40%;" />
+<div style="display: flex;">
+    <img src="./figs/BBH_general.png" style="width:48%;" alt="Img 1">
+    <img src="./figs/code_general_human.png" style="width:48%;" alt="Img 2">
 </div>
+
 
 We use exact match (EM) metric as our evaluation function. And we consider the Pearson correlation coefficient (r) and the Kendall rank correlation coefficient (τ) as our correlation functions. 
 
