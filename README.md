@@ -76,9 +76,10 @@ s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k
 output_path = "./data/general1.json"
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
-Using this code, you can quickly generate the same setting data as in the paper.
+Using this code, you can easily generate the same setting data as in the paper.
 
-# 🔧 Detailed data generation method 😳
+
+# 🔧 Detailed Data Generation Method
 
 You just run this scripts to generate tables and sqls.
 ```bash
