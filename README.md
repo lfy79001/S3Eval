@@ -8,9 +8,9 @@
 </div>
 
 
-# S3Eval: A Synthetic, Scalable and Systematic Suite for Evaluating Language Models
+# S3Eval: A Synthetic, Scalable and Systematic Evaluation Suite for Large Language Models
 
-The official repository which contains the code and data for our paper **S3Eval**: A **S**ynthetic, **S**calable and **S**ystematic Suite for Evaluating Language Models.
+The official repository which contains the code and data for our paper **S3Eval**: A **S**ynthetic, **S**calable and **S**ystematic  Evaluation Suite for Large Language Models.
 
 # 🔥 Updates
 
