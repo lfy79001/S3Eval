@@ -56,10 +56,8 @@ It shows that existing long context extension methods, while improving performan
 ## Answer position analysis
 
 <div style="display: flex;">
-    <img src="figs/gpt_group.png" style="width:24%;" alt="Image 1">
-    <img src="figs/gpt_dot.png" style="width:24%;" alt="Image 2">
-    <img src="figs/llama_group.png" style="width:24%;" alt="Image 3">
-    <img src="figs/llama_dot.png" style="width:24%;" alt="Image 4">
+    <img src="figs/gpt_dot.png" style="width:48%;" alt="Image 1">
+    <img src="figs/llama_dot.png" style="width:48%;" alt="Image 2">
 </div>
 
 
