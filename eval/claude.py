@@ -14,7 +14,7 @@ def find_element_position(contents, new_answer):
         for col_index, element in enumerate(row):
             if str(element) == str(new_answer):
                 return row_index, col_index
-    return -1, -1  # 表示未找到
+    return -1, -1  # not found
 
 def is_numeric(string):
     try:
