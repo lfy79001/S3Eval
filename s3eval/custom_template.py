@@ -1,12 +1,12 @@
-from table_utils import read_table
-from table_utils import find_element_position
+from .table_utils import read_table
+from .table_utils import find_element_position
 from tqdm import tqdm
 import random
 import pandas as pd
 import sqlite3
-from custom_template_parser import generate_process, generate_multiturn
-from custom_template_parser import cover_column, cover_row, calculate_depth, calculate_times
-from table_utils import execute_sql
+from .custom_template_parser import generate_process, generate_multiturn
+from .custom_template_parser import cover_column, cover_row, calculate_depth, calculate_times
+from .table_utils import execute_sql
 
 
 

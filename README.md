@@ -65,6 +65,12 @@ It shows that existing long context extension methods, while improving performan
 
 # ⚙️ Quickstart
 
+#### Install required packages
+```bash
+bash requirements.sh
+```
+
+#### Generate data
 ```bash
 python quick_start.py
 ```

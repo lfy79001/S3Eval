@@ -1,4 +1,4 @@
-from S3Eval import S3Eval
+from s3eval.S3Eval import S3Eval
 
 
 s3eval = S3Eval("general")

@@ -3,9 +3,9 @@ import random
 from nltk.corpus import wordnet as wn
 from datetime import datetime, timedelta
 import string
-from value_utils import has_duplicates, random_string, random_strings, random_int, random_float, generate_random_date, generate_random_date_of_birth, random_date_between
+from .value_utils import has_duplicates, random_string, random_strings, random_int, random_float, generate_random_date, generate_random_date_of_birth, random_date_between
 import re
-from value_utils import read_json, random_with_weight, random_double
+from .value_utils import read_json, random_with_weight, random_double
 sql_keywords = ['select', 'insert', 'update', 'delete', 'create', 'alter', 'drop', 'truncate', 'from', 'where', 'join', 'on', 'group by', 'order by', 'having', 'distinct', 'as', 'case', 'when', 'then', 'else', 'end', 'and', 'or', 'not', 'null', 'is', 'in', 'between', 'like', 'exists', 'count', 'sum', 'avg', 'max', 'min', 'union', 'intersect', 'except', 'commit', 'rollback', 'savepoint', 'grant', 'revoke', 'index', 'constraint', 'primary key', 'group', 'foreign', 'primary', 'key','foreign key', 'references', 'unique', 'check', 'default','order','values','limit']
 # 获取所有名词
 nouns = {x.name().split('.', 1)[0] for x in wn.all_synsets('n') if re.match(r'^[a-zA-Z]+$', x.name().split('.', 1)[0]) and x.name().split('.', 1)[0] not in sql_keywords}

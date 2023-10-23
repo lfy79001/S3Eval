@@ -1,5 +1,5 @@
 import re
-from table_utils import execute_sql
+from .table_utils import execute_sql
 
 
 

@@ -3,10 +3,10 @@ import os
 import random
 import json
 import shutil
-from table_utils import generate_table, insert_random_values
-from value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
-from general import general_queries
-from custom_template import template_queries
+from .table_utils import generate_table, insert_random_values
+from .value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
+from .general import general_queries
+from .custom_template import template_queries
 
 
 class S3Eval:
