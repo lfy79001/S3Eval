@@ -11,7 +11,7 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔥 Updates
 
-- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/SQLEval) and [paper](https://arxiv.org/abs/2310.15147).
+- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/S3Eval) and [paper](https://arxiv.org/abs/2310.15147).
 
 # 🔧 Task
 <p align="center">
@@ -20,8 +20,8 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 
 # ✨ Features
-SQLEval is a platform for Large Language Model Held-out Evaluation and Analysis. It has the following features:
-- **Reasoning**: SQL contains a rich grammar in which each keyword implies a different reasoning capability, and SQLEval can effectively test model reasoning capabilities.
+S3Eval is a platform for Large Language Model Held-out Evaluation and Analysis. It has the following features:
+- **Reasoning**: SQL contains a rich grammar in which each keyword implies a different reasoning capability, and S3Eval can effectively test model reasoning capabilities.
 - **Long-Context Understanding**: The difficulty of long text evaluation is how to collect meaningful texts and tasks, our work can theoretically evaluate any long-context capability of any LLM context windows length. 
 - **Controllable Analysis**: This platform allows fine-grained control of data generation. Such as detailed attributes of the table, fine-grained difficulty control of the generated SQL, and so on. Users have the flexibility to use it to explore more features of LLM.
 - **Dynamic without data leakage**: Randomly construct synthetic data that has never been seen by LLMs, which greatly alleviates data leakage problem in LLM evaluation.
