@@ -11,7 +11,7 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 # 🔥 Updates
 
-- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/SQLEval) and [paper].
+- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/SQLEval) and [paper](https://arxiv.org/abs/2310.15147).
 
 # 🔧 Task
 <p align="center">
