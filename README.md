@@ -9,6 +9,8 @@
 
 The official repository which contains the code and data for our paper **S3Eval**: A **S**ynthetic, **S**calable and **S**ystematic  Evaluation Suite for Large Language Models.
 
+Work in progress......
+
 # 🔥 Updates
 
 - [**2023-10-24**]: We released our [code](https://github.com/lfy79001/S3Eval) and [paper](https://arxiv.org/abs/2310.15147).
