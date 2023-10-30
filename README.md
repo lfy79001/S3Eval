@@ -63,6 +63,27 @@ It shows that existing long context extension methods, while improving performan
     <img src="figs/llama_dot.png" style="width:48%;" alt="Image 2">
 </div>
 
+## Examples Demostration
+
+#### SQL Execution Examples (Few-Shot)
+
+<p align="center">
+<img src="./figs/sql.jpg">
+</p>
+
+#### Multi-Step Instruction Examples (Few-Shot)
+
+<p align="center">
+<img src="./figs/instruction.jpg">
+</p>
+
+#### Chain-of-Thought SQL Execution Prompting examples
+
+<p align="center">
+    <img src="./figs/cot1.jpg" style="display: block; margin: 0 auto;">
+    <img src="./figs/cot2.jpg" style="display: block; margin: 0 auto;">
+</p>
+
 
 # ⚙️ Quickstart
 
