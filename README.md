@@ -96,17 +96,19 @@ bash requirements.sh
 ```bash
 python quick_start.py
 ```
+
+Using this code, you can easily generate the same setting data as in the paper.
 ```python
 s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k,long16k,long32k,long64k,long128k
 output_path = "./data/general1.json"  # Custom output file name
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
-Using this code, you can easily generate the same setting data as in the paper.
 
+### Generate data with specific number of tokens
 
-# 🔧 Detailed Data Generation Method
+If you want to quickly generate data with specific number of tokens,
 
-You just run this scripts to generate tables and sqls.
+According to your needs, change context_length, context_length_format, tokenizer.
 ```bash
 bash run.sh
 ```
@@ -120,7 +122,6 @@ python synthetic.py \
   --each_table_number  50 \  # How much training data do you want to generate on one table
   --database_config ./config/database_config.json \ # Fine-grained config for table properties
   --sql_config ./config/sql_config.json \ #   # The most important file, SQL Config File
-  --synthetic_mode general \ # general: Standard diverse SQL generation methods(recommended). template: Custom SQL template generation.
   --template  ./template/general.json  \  # SQL grammar/template location
   --context_length 1000 \                # Optional, Control the context length in token level
   --context_length_format flatten \     # Optional, Control the context length in token level
@@ -128,9 +129,30 @@ python synthetic.py \
   --data_mode eval \ # data format styles, 'eval' is more commonly used. Changes are not recommended.
 ```
 
-If you want to change the database config     
+
+
+# 🔧 Detailed Configuration Introduction
+
+
+### run.sh
+
 ```bash
-// database_config.json
+python synthetic.py \
+  --db_path ./db/db1 \  # Location of the generated tables
+  --new_db True \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
+  --total_number 1000 \   # How many training data do you want to generate
+  --each_table_number  50 \  # How much training data do you want to generate on one table
+  --database_config ./config/database_config.json \ # Fine-grained config for table properties
+  --sql_config ./config/sql_config.json \ #   # The most important file, SQL Config File
+  --template  ./template/general.json  \  # SQL grammar/template location
+  --context_length 1000 \                # Optional, Control the context length in token level
+  --context_length_format flatten \     # Optional, Control the context length in token level
+  --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional, Control the context length in token level
+  --data_mode eval \ # data format styles, 'eval' is more commonly used. Changes are not recommended.
+```
+  
+### database_config.json
+```bash
 {
   "col_min": 5, // the min number of cols
   "col_max": 8, // the max number of cols
@@ -140,7 +162,7 @@ If you want to change the database config
 }
 ```
 
-If you want to change the sql config
+### sql_config.json
 ```bash
 {
   "nest": [1],  // Number of SQL nestings. options: [1], [2], [1,2],[1,2, 3]
@@ -189,11 +211,6 @@ If you want to change the sql config
 }
 ```
 
-### Template or General
-
-`general` mode is recommended to use, cause it has more grammar. You only need to control the config, or simply control the file.
-
-`template` mode can also be used, but this template is slightly more difficult to write. can be used when testing long-context, see template template/long.txt
 
 ### Your own tables
 
@@ -265,9 +282,6 @@ __Method1:Change `sql_config` to this__
 __Method2: Direct use template file `template/easy.txt`__
 
 This approach has low SQL diversity
-
-You have to change the `synthetic_mode` for `general` to `template`
-
 
 
 

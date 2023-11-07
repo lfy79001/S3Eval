@@ -23,9 +23,9 @@ def main(args):
     
     sql_templates = []
     # 产生sql_template, 读取template文件
-    if args.synthetic_mode == 'template':
+    if args.template.endswith(".txt"):
         sql_templates = read_txt(args.template)
-    elif args.synthetic_mode == 'general':
+    elif args.template.endswith(".json"):
         general_dict = read_json(args.template)
         
     if os.path.exists(args.sql_config):
@@ -64,9 +64,9 @@ def main(args):
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if args.synthetic_mode == 'template':
+                if args.template.endswith(".txt"):
                     data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
-                elif args.synthetic_mode == 'general':
+                elif args.template.endswith(".json"):
                     data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
@@ -108,9 +108,9 @@ def main(args):
                     delete_table(table_path)    
                     continue                    
             # 根据该template生成SQL语句
-            if args.synthetic_mode == 'template':
+            if args.template.endswith(".txt"):
                 data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
-            elif args.synthetic_mode == 'general':
+            elif args.template.endswith(".json"):
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             data.extend(data_i)
             i = i + 1
@@ -129,9 +129,9 @@ def main(args):
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if args.synthetic_mode == 'template':
+                if args.template.endswith(".txt"):
                     data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
-                elif args.synthetic_mode == 'general':
+                elif args.template.endswith(".json"):
                     data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
@@ -150,9 +150,9 @@ def main(args):
             print(str(i) + '\n')
             table_path = random.choice(table_names)
             
-            if args.synthetic_mode == 'template':
+            if args.template.endswith(".txt"):
                 data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
-            elif args.synthetic_mode == 'general':
+            elif args.template.endswith(".json"):
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             
             data.extend(data_i)
@@ -185,7 +185,6 @@ if __name__ == '__main__':
     parser.add_argument('--each_table_number', type=int, default=50)
     parser.add_argument('--database_config', type=str, default='./config/database_config.json')
     parser.add_argument('--sql_config', type=str, default='./config/sql_config.json')
-    parser.add_argument('--synthetic_mode', choices=['template', 'general'], default='general')
     parser.add_argument('--template', type=str, default='./template/general.json')
     parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
     parser.add_argument('--context_length', type=int, default=0)
