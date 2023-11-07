@@ -5,4 +5,7 @@ python synthetic.py \
   --each_table_number  20 \
   --database_config ./config/database_config.json \
   --sql_config ./config/sql_config.json \
-  --template  ./template/general.json
+  --template  ./template/easy.txt \
+  --context_length 1000 \
+  --context_length_format flatten \
+  --tokenizer mistralai/Mistral-7B-v0.1
