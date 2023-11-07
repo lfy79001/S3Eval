@@ -106,8 +106,9 @@ class S3Eval:
         table_number = total_number // self.each_table_number
         
     
-        # 生成database的config，表格的列范围，行范围 
-        database_config, column_numbers, row_numbers = generate_database_config(self.database_config, )
+        # 表格的行列范围 
+        column_numbers = list(range(self.database_config['col_min'], self.database_config['col_max']+1))
+        row_numbers = list(range(self.database_config['row_min'], self.database_config['row_max']+1))
         
         ##############################################
         table_name = 'table_try' 

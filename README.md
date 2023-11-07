@@ -116,7 +116,7 @@ bash run.sh
 # parameter introduction
 python synthetic.py \
   --db_path ./db/db1 \  # Location of the generated tables
-  --new_db True \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
+  --new_db 1 \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
   --total_number 1000 \   # How many data do you want to generate
   --each_table_number  50 \  # How many data do you want to generate on one table
   --database_config ./config/database_config.json \ # Table Config
@@ -135,7 +135,7 @@ You can change __template__ according to your needs, for example
 # parameter introduction
 python synthetic.py \
   --db_path ./db/db1 \  # Location of the generated tables
-  --new_db True \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
+  --new_db 1 \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
   --total_number 1000 \   # How many data do you want to generate
   --each_table_number  50 \  # How many data do you want to generate on one table
   --database_config ./config/database_config.json \ # Table Config
@@ -153,7 +153,7 @@ python synthetic.py \
 ```bash
 python synthetic.py \
   --db_path ./db/db1 \  # Location of the generated tables
-  --new_db True \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
+  --new_db 1 \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
   --total_number 1000 \   # How many data do you want to generate
   --each_table_number  50 \  # How many data do you want to generate on one table
   --database_config ./config/database_config.json \ # Table Config

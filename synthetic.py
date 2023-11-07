@@ -8,7 +8,6 @@ from s3eval.value_utils import random_int, read_json, read_jsonl, read_txt, rand
 from s3eval.general import general_queries
 from s3eval.custom_template import template_queries
 
-
 def main(args):
     # 判断db文件夹是否存在
     if args.new_db:
@@ -36,6 +35,7 @@ def main(args):
     if args.new_db:
         # 计算每个table需要生成多少数据
         table_number = args.total_number // args.each_table_number
+        
     
         # 生成database的config，表格的列范围，行范围 
         database_config, column_numbers, row_numbers = \
@@ -102,11 +102,12 @@ def main(args):
             # 表格中插入随机值 
             insert_random_values(database_config, table_path, column_number, row_number)
             
-            table_length = get_table_length(table_path, args.tokenizer, args.context_length_format)
             if args.context_length:            
+                table_length = get_table_length(table_path, args.tokenizer, args.context_length_format)
                 if table_length < args.context_length-0.025*args.context_length or table_length > args.context_length+0.025*args.context_length:
                     delete_table(table_path)    
-                    continue                    
+                    continue      
+              
             # 根据该template生成SQL语句
             if args.template.endswith(".txt"):
                 data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
@@ -161,7 +162,7 @@ def main(args):
     random.shuffle(data)
     print(len(data))
     if args.des == '':
-        save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{random_big_int()}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
+        save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
     else:
         save_path = f"./data/{os.path.basename(args.db_path)}_{len(data)}_{args.des}_{os.path.basename(args.template).replace('.txt','').replace('.json','')}.json"
     with open(save_path, 'w') as f:

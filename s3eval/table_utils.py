@@ -16,6 +16,7 @@ from transformers import AutoTokenizer
 
 def get_table_length(table_path, tokenizer_path, format):
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
+    
     header, contents, _ = read_table(table_path)
     
     table_str = ""
@@ -38,7 +39,7 @@ def get_table_length(table_path, tokenizer_path, format):
     return table_length
     
     
-def generate_database_config(database_config, context_length, tokenizer, context_length_format, db_path):
+def generate_database_config(database_config, context_length, tokenizer_path, context_length_format, db_path):
     
     database_config = read_json(database_config) 
     # 表格的行列范围 
@@ -47,7 +48,7 @@ def generate_database_config(database_config, context_length, tokenizer, context
 
 
     # 根据指定 context_length 生成数据
-    if context_length != 0 and tokenizer:        
+    if context_length != 0 and tokenizer_path:        
         database_config['col_min'] = 5
         database_config['col_max'] = 5
         
@@ -85,7 +86,7 @@ def generate_database_config(database_config, context_length, tokenizer, context
             # 表格中插入随机值 
             insert_random_values(database_config, table_path, column_number, row_number)
 
-            table_length = get_table_length(table_path, tokenizer, context_length_format)
+            table_length = get_table_length(table_path, tokenizer_path, context_length_format)
             
             if table_length > context_length:
                 row_last -= 5
@@ -94,7 +95,7 @@ def generate_database_config(database_config, context_length, tokenizer, context
                 row_last += 5
             delete_table(table_path)
 
-    delete_table(table_path)
+        delete_table(table_path)
 
     print(f"database_config: {database_config}\ncolumn_numbers: {column_numbers}, row_numbers: {row_numbers}")
     return database_config, column_numbers, row_numbers
