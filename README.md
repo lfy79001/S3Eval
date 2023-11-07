@@ -92,11 +92,11 @@ It shows that existing long context extension methods, while improving performan
 bash requirements.sh
 ```
 
-### Generate data
+### Generate the same setting data as in the paper
 ```bash
 python quick_start.py
 ```
-Using this code, you can easily generate the same setting data as in the paper.
+
 ```python
 s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k,long16k,long32k,long64k,long128k
 output_path = "./data/general1.json"  # Custom output file name
