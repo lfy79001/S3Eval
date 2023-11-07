@@ -96,7 +96,6 @@ bash requirements.sh
 ```bash
 python quick_start.py
 ```
-
 Using this code, you can easily generate the same setting data as in the paper.
 ```python
 s3eval = S3Eval("general") # general,easy,long2k,long4k,long8k,long16k,long32k,long64k,long128k
@@ -108,7 +107,7 @@ data = s3eval.generate_data(500, output_path) # total_number, output_path
 
 If you want to quickly generate data with specific number of tokens,
 
-According to your needs, change context_length, context_length_format, tokenizer.
+According to your needs, change __context_length__, __context_length_format__, __tokenizer__.
 ```bash
 bash run.sh
 ```
