@@ -172,7 +172,11 @@ python synthetic.py \
   "col_max": 8, // the max number of cols
   "row_min": 15,  // the min number of rows
   "row_max": 40,  // the max number of rows
-  "text_int_date": [0.55, 0.35, 0.1]  // text,int,date  header ratio
+  "text_int_date": [0.55, 0.35, 0.1], // text,int,date  header ratio
+  "text_int_date_fix": ["TEXT", "TEXT", "INT", "INT", "INT"], // Specify the type of each header
+  // Probability of duplicate values in each column
+  "value_repeat_ratio": [0, 0.2, 0.3, 0, 0, 0, 0, 0, 0.2, 0.5], 
+  "value_repeat_ratio_fix": ["random", "random"], // Specify the duplicate values of each column
 }
 ```
 
