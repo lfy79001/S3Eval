@@ -107,9 +107,6 @@ def find_position(header, contents, sql, keyword, db_path):
     def replace_chars(s, start_index, end_index, origin, new):
         return s[:start_index] + s[start_index:end_index].replace(origin, new) + s[end_index:]
     if keyword == 'where':
-        # 定义正则表达式
-        # 匹配并截断字符串
-        # 查找并截取字符串
         result = re.search(r"(where.*?)(?=group by)", sql, re.IGNORECASE)
         if result is None:
             result = re.search(r"(where.*?)(?=having)", sql)
@@ -117,8 +114,7 @@ def find_position(header, contents, sql, keyword, db_path):
             result = re.search(r"(where.*?)(?=order by)", sql)
         if result is None:
             result = re.search(r"(where.*)", sql)
-        
-        # 提取截断后的部分
+    
         if result:
             new_sql = result.group(1).strip()
         output = find_column(new_sql)
@@ -170,9 +166,9 @@ def find_position(header, contents, sql, keyword, db_path):
     elif keyword == 'from':
         return "my_table", "my_table"
     elif keyword == 'order by':
-        # 查找并截取字符串
+
         result = re.search(r"(order\sby.*)", sql)
-        # 提取截断后的部分
+
         if result:
             new_sql = result.group(1).strip()
         
@@ -188,9 +184,6 @@ def find_position(header, contents, sql, keyword, db_path):
         order = 'asc'
         if 'desc' in new_sql:
             order = 'desc'
-        # if len(output) > 1:
-        #     import pdb; pdb.set_trace()
-
         if output is None:
             if '*' in new_sql:
                 return '*', (('*', agg), order)

@@ -40,10 +40,10 @@ def convert_to_db(file_path, db_name):
     
 def get_file_paths(directory):
     file_paths = []
-    pattern = os.path.join(directory, '*')  # 匹配指定目录下的所有文件
+    pattern = os.path.join(directory, '*')
 
     for file_path in glob.glob(pattern):
-        if os.path.isfile(file_path):  # 确保是文件路径，而非目录路径
+        if os.path.isfile(file_path): 
             file_paths.append(file_path)
 
     return file_paths

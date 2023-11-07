@@ -13,13 +13,13 @@ code_english = {'>': 'greater than', '<': 'less than', '=': 'less than', 'count'
 
 
 def control_sql_general(header, contents, sql, answer, col_dict, select_rows_list, sql_config):
-    # 如果没有控制条件，直接返回True
+    # if there are no control conditions, return True.
     if not sql_config:
         return True
     row_num = len(contents)
     col_num = len(contents[0])
     
-    # 控制答案的长度，如果传入字符串'all'，就不限制为空的
+    # Control the length of the answer.
     if isinstance(sql_config['answer_cells_number'], int):
         if len(answer) != sql_config['answer_cells_number']:
             return False
@@ -27,14 +27,14 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
         if len(answer) == 0:
             return False
 
-    # 对keyword做操作
+    # keyword
     exclude_keywords = [key for key, value in sql_config['keywords_setting'].items() if value is False]
 
     for keyword in exclude_keywords:
         if keyword in sql:
             return False
     
-    # length 筛选
+    # length
     if sql_config['length_setting']['is_available']:
         sql_length = len(sql.split(' '))
         gold_length = []
@@ -67,7 +67,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
             if not (sql_config['select_row_ratio']['min'] <= select_row_num / row_num <= sql_config['select_row_ratio']['max']):
                 return False
 
-    # 过滤的次数
+    # Filter times
     if sql_config['filter_times']['is_available']:
         depth = filter_times(sql)
         if depth not in sql_config['filter_times']['value']:
@@ -80,7 +80,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
         if time not in sql_config['calculate_times']['value']:
             return False
 
-    # answer location
+    # Answer Location
     if sql_config['answer_location']['is_available']:
         row_index, col_index = find_element_position(contents, answer)
         if len(sql_config['answer_location']['row_value']) != 0:
@@ -103,7 +103,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
 
 
    
-# 返回 ( 字符串， 选择的列名, 自然语言instruction)
+# Return ( select_part, select_cols, select_instruction, select_agg, select_process)
 def select_condition(text_cols, int_cols):
     select_part = ""
     select_cols = []
@@ -111,7 +111,7 @@ def select_condition(text_cols, int_cols):
     select_agg = ""
     select_process = ('','')
     
-    # 设置 “四则运算” 为select_col  
+    # Set "+, -, *, /" as the value for select_col.
     if random_with_weight([True, False], [0.05, 0.95]):
         select_col1, select_col2 = random.choices(int_cols, k=2)
         cal_ops = ['+', '-', '*', '/']
@@ -126,10 +126,10 @@ def select_condition(text_cols, int_cols):
             select_cols = [select_col1, select_col2]
             select_instruction = f"Select calculate {code_english[agg]} {code_english[cal_op]} the values in columns {select_col1} and {select_col2} in filtered rows."
             select_agg = agg
-    # 普通的 select_col
+    # Common select_col
     else:    
         select_col = random.choice(text_cols + int_cols)
-        # 没有agg，直接返回选中行
+        # if no agg, directly return this row
         if random_with_weight([True, False], [0.8, 0.2]):
             select_part = select_col
             select_cols = [select_col]
@@ -152,7 +152,7 @@ def select_condition(text_cols, int_cols):
     return select_part, select_cols, select_instruction, select_agg, select_process
     
 def where_condition(header, contents, text_cols, int_cols):
-    # random where的个数
+    # random where number
     where_num = random_with_weight([1, 2], [0.7, 0.3])
     where_string_output = ""
     where_cols = []
@@ -167,41 +167,41 @@ def where_condition(header, contents, text_cols, int_cols):
             if op == '=':
                 value = f"'{random.choice(contents)[header.index(select_col)]}'"
                 op_value = f"{op} {value}"
-                # 记录条件
+                # condition
                 where_process.append( (select_col, op, value)  )
-                # 转成自然语言
+                # to NL
                 where_string.append(f"The value of column {select_col} is {value}.")
             elif op == 'like':
                 value = random.choice(contents)[header.index(select_col)]
                 like_value = value[:3]
                 op_value = f"{op} '{like_value}%'"
-                # 记录条件
+                # condition
                 where_process.append( (select_col, op, like_value)  )
-                # 转成自然语言
+                # to NL
                 where_string.append(f"The value of column {select_col} is required to fuzzy match '{like_value}%'.")
             elif op == 'in':
                 in_number = random_with_weight([2,3],[0.6,0.4])
                 value = [row[header.index(select_col)] for row in random.choices(contents, k=3)]
                 if in_number == 2:
                     in_value = f"( '{value[0]}' , '{value[1]}' )"
-                    # 记录条件
+                    # condition
                     where_process.append( (select_col, op, [value[0], value[1]])  )
-                    # 转成自然语言
+                    # to NL
                     where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}'.")
                 elif in_number == 3:
                     in_value = f"( '{value[0]}' , '{value[1]}' , '{value[2]}' )"
-                    # 记录条件
+                    # condition
                     where_process.append( (select_col, op, [value[0], value[1], value[2]])  )
-                    # 转成自然语言
+                    # to NL
                     where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}' or '{value[2]}'.")
                 op_value = f"{op} {in_value}"
         elif select_col in int_cols:
             op = random.choice(['>', '<', '='])
             value = f"{random.choice(contents)[header.index(select_col)]}"
             op_value = f"{op} {value}"
-            # 记录条件
+            # condition
             where_process.append( (select_col, op, value)  )
-            # 转成自然语言
+            # to NL
             where_string.append(f"The value of column {select_col} needs to be {code_english[op]} {value}.")
             
         if i == 0:
@@ -216,7 +216,7 @@ def order_condition(text_cols, int_cols, mode='single'):
     order_instruction_temp = "Sort the obtained values in {} order of {} and select the {} value to get the answer."
     order = random.choice(['asc', 'desc'])
     order_process = []
-    # group by普遍都有 count()
+
     if mode == 'group':
         select_col = random.choice(text_cols + int_cols)
         is_distinct_select_col = random.choice([f'count ( {select_col} )', f'count ( distinct {select_col} )'])
@@ -254,7 +254,7 @@ def having_condition(header, contents, text_cols, int_cols):
     having_process = []
     
     for i in range(condition_num):
-        # 是否需要聚合
+        # if aggregation
         if random_with_weight([True, False], [0.7, 0.3]):
             select_col = random.choice(text_cols + int_cols)
             num1 = random.choice([1,2,3,4,5,6])
@@ -286,7 +286,7 @@ def having_condition(header, contents, text_cols, int_cols):
                     having_cols.append(select_col)
                     having_conditions_instructions.append(f"{code_english[agg]} column {select_col} is {code_english[op]} {str(value)}.")
                     having_process.append( (select_col, op, num1, agg)  )
-        # 不需要聚合
+        # no aggregation
         else:
             select_col = random.choice(int_cols)
             op = random.choice(['>', '<'])
@@ -425,7 +425,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
 
         return sql_cot
 
-    # (处理后的query, 涉及到的列的字典，select到的行, instruction, select_agg)
+    # Return (processed query, selected dict，selected row, instruction, select_agg)
     def single_template_generate(query, template='s'):
         ##### 预定义
         select_col, where_col, order_col, group_col, having_col = [], [], [], [], []
@@ -490,15 +490,15 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
 
     queries = []
     for _ in tqdm(range(num_queries*multiple)):
-        # s代表一个select，d代表二个select，t代表三个select
+        # s: 1 select，d: 2 select，t: 3 select
         id, query = random_dict_key_value(new_templates)
         if id.startswith('s'):
             query, col_dict, select_rows_list, instruction, select_agg, sql_cot = single_template_generate(query)
         elif id.startswith('d'):
-            # (模板中需要被替换的str, 可使用的subsql列表)
+            # Template string that needs to be replaced and the list of available subqueries.
             to_replace_str, templist = extract_subsql_position(query)
             selected_template = random.choice([sql_templates[temp] for temp in templist])
-            # 生成subsql
+            # Generate subsql
             subsql, subsql_cols_dict, subsql_rows_list, subsql_instruction, subsql_select_agg, sql_cot1 = single_template_generate(selected_template, template='d')
             query = query.replace(to_replace_str, subsql)
             select_col = subsql_cols_dict['select_col'][0]
@@ -566,7 +566,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
     
     
     
-    # 删除重复的sql
+    # Remove duplicate SQL
     final_data = [] 
     sql_set = set()   
     for query in queries:
@@ -576,7 +576,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
             final_data.append(query)
             sql_set.add(query['sql'])
 
-    # 输出数据
+    # Output data
     if data_mode == 'eval' and len(final_data) <= sql_config['n_shot']:
         print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:0") 
         return []

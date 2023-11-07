@@ -5,7 +5,7 @@ import json
 import re
 
 def has_duplicates(lst):
-    # 使用集合（set）来判断列表中的元素是否唯一
+    # Use sets to determine whether elements in a list are unique
     return len(lst) != len(set(lst))
 
 def random_string():
@@ -26,7 +26,7 @@ def random_big_int():
 
 def random_float():
     random_float = random.uniform(1.1, 20.0)
-    formatted_float = "{:.2f}".format(random_float)  # 设置为2位小数
+    formatted_float = "{:.2f}".format(random_float)  
     return formatted_float
 
 
@@ -42,21 +42,18 @@ def generate_random_date():
 
     return random_date.strftime("%Y-%m-%d")
 
-# 生成随机的出生年月日
+# year-month-day
 def generate_random_date_of_birth(age):
-    # 获取当前日期
+
     current_date = datetime.now()
 
-    # 计算出生日期的起始和结束日期范围
     end_date = current_date - timedelta(days=365 * age)
     start_date = end_date - timedelta(days=365)
 
-    # 生成随机的出生日期
     random_date = random_date_between(start_date, end_date)
 
     return random_date.strftime('%Y-%m-%d')
 
-# 在日期范围内生成随机日期
 def random_date_between(start_date, end_date):
     start_timestamp = start_date.timestamp()
     end_timestamp = end_date.timestamp()
@@ -117,17 +114,17 @@ def random_dict_key_value(my_dict):
 
 # 删除重复空格
 def remove_double_spaces(text):
-    pattern = r' {2}'  # 匹配连续的两个空格
+    pattern = r' {2}' 
     replaced_text = re.sub(pattern, ' ', text)
     return replaced_text
 
-# 解析字符串中的[s1,s2]，用于处理嵌套数据
+
 def extract_subsql_position(text):
-    pattern = r'\[(.*?)\]'  # 匹配方括号内的内容
+    pattern = r'\[(.*?)\]'  
     match = re.search(pattern, text)
     if match:
-        content = match.group(0)  # 获取匹配到的内容，包括方括号 "[ ]"
-        items = [item.strip() for item in match.group(1).split(',')]  # 拆分并去除空格
+        content = match.group(0) 
+        items = [item.strip() for item in match.group(1).split(',')] 
         return content, items
     else:
         return None, None

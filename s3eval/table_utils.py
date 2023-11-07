@@ -7,7 +7,7 @@ from .value_utils import has_duplicates, random_string, random_strings, random_i
 import re
 from .value_utils import read_json, random_with_weight, random_double
 sql_keywords = ['select', 'insert', 'update', 'delete', 'create', 'alter', 'drop', 'truncate', 'from', 'where', 'join', 'on', 'group by', 'order by', 'having', 'distinct', 'as', 'case', 'when', 'then', 'else', 'end', 'and', 'or', 'not', 'null', 'is', 'in', 'between', 'like', 'exists', 'count', 'sum', 'avg', 'max', 'min', 'union', 'intersect', 'except', 'commit', 'rollback', 'savepoint', 'grant', 'revoke', 'index', 'constraint', 'primary key', 'group', 'foreign', 'primary', 'key','foreign key', 'references', 'unique', 'check', 'default','order','values','limit']
-# 获取所有名词
+# Get all English nouns
 nouns = {x.name().split('.', 1)[0] for x in wn.all_synsets('n') if re.match(r'^[a-zA-Z]+$', x.name().split('.', 1)[0]) and x.name().split('.', 1)[0] not in sql_keywords}
 import pandas as pd
 import shutil
@@ -42,12 +42,12 @@ def get_table_length(table_path, tokenizer_path, format):
 def generate_database_config(database_config, context_length, tokenizer_path, context_length_format, db_path):
     
     database_config = read_json(database_config) 
-    # 表格的行列范围 
+    # the row range and column range of tables
     column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
     row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
 
 
-    # 根据指定 context_length 生成数据
+    # if args.context_length is given, generate data based on the specified number of tokens
     if context_length != 0 and tokenizer_path:        
         database_config['col_min'] = 5
         database_config['col_max'] = 5
@@ -61,11 +61,11 @@ def generate_database_config(database_config, context_length, tokenizer_path, co
         
         row_last = int(result)
         
+        ###################### Sampling to find the most suitable number of table columns
         while True:
             database_config['row_min'] = row_last
             database_config['row_max'] = row_last
             
-            # 表格的行列范围 
             column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
             row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
             
@@ -73,17 +73,14 @@ def generate_database_config(database_config, context_length, tokenizer_path, co
             table_name = 'table_try' 
             table_path = os.path.join(db_path, table_name + '.db')
             
-            # 表格随机大小
             column_number = random.choice(column_numbers)
             row_number = random.choice(row_numbers)
             
-            # 生成表格schema
             while True:
                 output = generate_table(database_config, table_path,column_number,row_number)
                 if output != 0:
                     break   
             
-            # 表格中插入随机值 
             insert_random_values(database_config, table_path, column_number, row_number)
 
             table_length = get_table_length(table_path, tokenizer_path, context_length_format)
@@ -94,7 +91,7 @@ def generate_database_config(database_config, context_length, tokenizer_path, co
             else:
                 row_last += 5
             delete_table(table_path)
-
+        #########################
         delete_table(table_path)
 
     print(f"database_config: {database_config}\ncolumn_numbers: {column_numbers}, row_numbers: {row_numbers}")
@@ -110,20 +107,17 @@ def generate_database_config(database_config, context_length, tokenizer_path, co
 def read_table(table_path):
     table_name = 'my_table'
     conn = sqlite3.connect(table_path)
-    # 创建游标对象
     cursor = conn.cursor()
-    # 执行PRAGMA语句获取列名信息
     cursor.execute(f'PRAGMA table_info({table_name})')
-    # 获取查询结果
+
     columns = cursor.fetchall()
-    # 提取列名
+
     header = [column[1] for column in columns]
     types = [column[2] for column in columns]
-    # 执行查询，获取内容
+
     cursor.execute("SELECT * FROM my_table")
     contents = cursor.fetchall()
 
-    # 关闭游标和数据库连接
     cursor.close()
     conn.close()
 
@@ -133,16 +127,12 @@ def insert_random_values(database_config, table_path,column_number,row_number):
     table_name = 'my_table'
 
     conn = sqlite3.connect(table_path)
-    # 创建游标对象
     cursor = conn.cursor()
     
-    # 执行PRAGMA语句获取列名信息
     cursor.execute(f'PRAGMA table_info({table_name})')
 
-    # 获取查询结果
     columns = cursor.fetchall()
 
-    # 提取列名
     column_names = [column[1] for column in columns]
     column_types = [column[2] for column in columns]
 
@@ -170,7 +160,7 @@ class RandomString:
         self.TEXT_column_number = column_types.count('TEXT')
         self.indices = [i for i, column_type in enumerate(column_types) if column_type == 'TEXT']
         elements = ['single', 'double', 'triple', '4th', '5th', '6th', '8th', '10th', '15th', 'random']
-        weights = database_config['value_repeat_ratio']                ###############################################
+        weights = database_config['value_repeat_ratio']   
         if "value_repeat_ratio_fix" in database_config.keys():
             self.random_types = database_config["value_repeat_ratio_fix"]
         else:
@@ -202,8 +192,6 @@ class RandomString:
         for i in range(self.TEXT_column_number):
             if self.random_types[i] in ['single', 'double', 'triple', '4th', '5th', '6th', '8th', '10th', '15th']:
                 self.items.append([random.choice(self.base_string[i]) for _ in range(row_number)])
-                # self.items.append([ random_double(self.base_string[i], [14,6]) for _ in range(row_number)])
-                # self.items.append(random_double(self.base_string[i], [1,19]))
             elif self.random_types[i] in ['random']:
                 self.items.append([random_string() for _ in range(row_number)])    
         
@@ -225,12 +213,9 @@ def generate_random_column_type(weights):
 
 
 def generate_table(database_config, table_path,column_number, row_number):
-    # 读取database config文件 col_min max, 
-    
-    
     table_name = 'my_table'
     conn = sqlite3.connect(table_path)
-    # 创建游标对象
+    
     cursor = conn.cursor()
     header_name = []
     while True:
@@ -261,14 +246,12 @@ def generate_table(database_config, table_path,column_number, row_number):
 
 def execute_sql(db_path, sql):
     conn = sqlite3.connect(db_path)
-    # 创建游标对象
+
     cursor = conn.cursor()
 
-    # 执行查询，获取内容
     cursor.execute(sql)
     contents = cursor.fetchall()
 
-    # 关闭游标和数据库连接
     cursor.close()
     conn.close()
     return contents
@@ -279,7 +262,7 @@ def find_element_position(contents, new_answer):
         for col_index, element in enumerate(row):
             if str(element) == str(new_answer):
                 return row_index, col_index
-    return -1, -1  # 表示未找到
+    return -1, -1  # not found
 
 
 def transform_output_to_tablestr(header, contents, type='markdown'):
@@ -306,13 +289,10 @@ def transform_output_to_tablestr(header, contents, type='markdown'):
     return output_str
 
 def transform_output_to_string(data):
-    # 将元组的第一个元素提取出来
     values = [str(item[0]) for item in data]
 
-    # 将列表转换为字符串
     result = ','.join(values)
 
-    # 如果只有一个元组，则只输出该元组的第一个元素
     if len(data) == 1:
         result = values[0]
     return result
@@ -322,25 +302,18 @@ def generate_intermedium_table(original_db_path, contents):
     
     new_db_path = '/home/aiops/liuqian/fangyu/db/template.db'
 
-    # 复制数据库文件到新路径
     shutil.copyfile(original_db_path, new_db_path)
 
-    # 连接到新路径的数据库
     conn = sqlite3.connect(new_db_path)
 
-    # 创建游标对象
     cursor = conn.cursor()
-
-    # 清空表格
     cursor.execute("DELETE FROM my_table")
 
     for content in contents:
         cursor.execute("INSERT INTO my_table VALUES {}".format(tuple(content)))
 
-    # 提交更改
     conn.commit()
 
-    # 关闭连接
     conn.close()
     return new_db_path
 

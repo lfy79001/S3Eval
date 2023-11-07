@@ -70,21 +70,8 @@ class S3Eval:
         if multistep: self.sql_config["output_config"]["multistep"] = True
         if cot: self.sql_config["output_config"]["cot"] = True
         
-    # def set_template(self, path):
-    #     self.path = path
-    # def set_database_config(self, database_config):
-    #     self.database_config = database_config
-    # def set_sql_config(self, sql_config):
-    #     self.sql_config = sql_config
-    # def set_context_length(self, context_length):
-    #     self.context_length = context_length
-    # def set_context_length_format(self, context_length_format):
-    #     self.context_length_format = context_length_format
-    # def set_tokenizer(self, tokenizer):
-    #     self.tokenizer = tokenizer
         
     def generate_data(self, total_number, output_path):
-        # 判断db文件夹是否存在
         if os.path.exists(self.db_path):
             shutil.rmtree(self.db_path)
             os.makedirs(self.db_path)
@@ -93,20 +80,15 @@ class S3Eval:
 
         
         sql_templates = None
-        # 产生sql_template, 读取template文件
+
         if self.template.endswith('.txt'):
             sql_templates = read_txt(self.template)
         elif self.template.endswith('.json'):
             sql_templates = read_json(self.template)
             
-
-        # 在新database上生成数据
-
-        # 计算每个table需要生成多少数据
         table_number = total_number // self.each_table_number
         
     
-        # 表格的行列范围 
         column_numbers = list(range(self.database_config['col_min'], self.database_config['col_max']+1))
         row_numbers = list(range(self.database_config['row_min'], self.database_config['row_max']+1))
         
@@ -114,17 +96,17 @@ class S3Eval:
         table_name = 'table_try' 
         table_path = os.path.join(self.db_path, table_name + '.db')
         
-        # 表格随机大小
+        # Random table size
         column_number = random.choice(column_numbers)
         row_number = random.choice(row_numbers)
         
-        # 生成表格schema
+        # Generate table schema
         while True:
             output = generate_table(self.database_config, table_path, column_number,row_number)
             if output != 0:
                 break   
         
-        # 表格中插入随机值 
+        # insert values
         insert_random_values(self.database_config, table_path, column_number, row_number)
         
         multiple = 5
@@ -163,27 +145,25 @@ class S3Eval:
             table_name = 'table' + str(i)
             table_path = os.path.join(self.db_path, table_name + '.db')
             
-            # 表格随机大小
             column_number = random.choice(column_numbers)
             row_number = random.choice(row_numbers)
             
-            # 生成表格schema
             while True:
                 output = generate_table(self.database_config, table_path,column_number,row_number)
                 if output != 0:
                     break   
             
-            # 表格中插入随机值 
+
             insert_random_values(self.database_config, table_path, column_number, row_number)
             
-            # 根据该template生成SQL语句
+
             if self.template.endswith('.txt'):
                 data_i = template_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
             elif self.template.endswith('.json'):
                 data_i = general_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
             data.extend(data_i)
             
-        # 保存生成的数据
+        # Save data
         random.shuffle(data)
         print(len(data))
 

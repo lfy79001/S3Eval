@@ -15,10 +15,10 @@ def control_sql(header, contents, sql, answer, process, details, sql_config, tab
     row_num = len(contents)
     col_num = len(contents[0])
     
-    # 如果没有控制条件，直接返回True
+    # if there are no control conditions, return True.
     if not sql_config:
         return True
-    # 对keyword做操作
+    # keyword
     sql_keywords = process.keys()
     exclude_keywords = [key for key, value in sql_config.items() if value is False]
     intersection = list(set(sql_keywords) & set(exclude_keywords))
@@ -26,7 +26,7 @@ def control_sql(header, contents, sql, answer, process, details, sql_config, tab
         return False
 
 
-    # length 筛选
+    # length 
     if sql_config['length_setting']['is_available']:
         sql_length = len(sql.split(' '))
         gold_length = []
@@ -238,7 +238,7 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, multipl
         
         
     conn = sqlite3.connect(table_path)
-    # 创建游标对象
+
     cursor = conn.cursor()
 
     count = 0
