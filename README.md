@@ -125,8 +125,7 @@ python synthetic.py \
   --template  ./template/general.json  \  # SQL grammar/template location
   --context_length 1000 \                # Optional, Control the context length in token level
   --context_length_format flatten \     # Optional, Control the context length in token level
-  --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional, Control the context length in token level
-  --data_mode eval \ # data format styles, 'eval' is more commonly used. Changes are not recommended.
+  --tokenizer mistralai/Mistral-7B-v0.1 # Optional, Control the context length in token level
 ```
 
 

@@ -8,5 +8,4 @@ python synthetic.py \
   --template  ./template/general.json \
   --context_length 1000 \
   --context_length_format flatten \
-  --tokenizer mistralai/Mistral-7B-v0.1 \
-  --data_mode eval 
+  --tokenizer mistralai/Mistral-7B-v0.1
