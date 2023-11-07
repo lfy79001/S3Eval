@@ -9,7 +9,7 @@ from s3eval.general import general_queries
 from s3eval.custom_template import template_queries
 
 def main(args):
-    # 判断db文件夹是否存在
+    # Check if the "db" folder exists
     if args.new_db:
         if os.path.exists(args.db_path):
             shutil.rmtree(args.db_path)
@@ -21,7 +21,8 @@ def main(args):
             raise Exception(f"not have this database {args.db_path}")
     
     sql_templates = []
-    # 产生sql_template, 读取template文件
+    
+    # Read the template file
     if args.template.endswith(".txt"):
         sql_templates = read_txt(args.template)
     elif args.template.endswith(".json"):
@@ -31,33 +32,33 @@ def main(args):
         sql_config = read_json(args.sql_config)
     else:
         sql_config = None
-    # 在新database上生成数据
+        
+    # Generate data on the new database.
     if args.new_db:
-        # 计算每个table需要生成多少数据
+        # Calculate how many tables to be generated
         table_number = args.total_number // args.each_table_number
         
-    
-        # 生成database的config，表格的列范围，行范围 
+        # Read the configuration of the database, column ranges, and row ranges for each table.
         database_config, column_numbers, row_numbers = \
             generate_database_config(args.database_config, args.context_length, args.tokenizer, args.context_length_format, args.db_path)
               
         
         
-        ##############################################
+        ############################################## Perform pre-sampling to determine the sampling number "multiple".
         table_name = 'table_try' 
         table_path = os.path.join(args.db_path, table_name + '.db')
         
-        # 表格随机大小
+        # Random table size
         column_number = random.choice(column_numbers)
         row_number = random.choice(row_numbers)
         
-        # 生成表格schema
+        # Generate table schema
         while True:
             output = generate_table(database_config, table_path,column_number,row_number)
             if output != 0:
                 break   
         
-        # 表格中插入随机值 
+        # Insert random values into the table.
         insert_random_values(database_config, table_path, column_number, row_number)
         
         multiple = 5
@@ -78,9 +79,7 @@ def main(args):
 
         delete_table(table_path)       
     
-        ############################################ 
-        
-        
+        ############################################ Generate the data formally.
         
         data = []
         i = 0
@@ -89,17 +88,17 @@ def main(args):
             table_name = 'table' + str(i)
             table_path = os.path.join(args.db_path, table_name + '.db')
             
-            # 表格随机大小
+            # Random table size
             column_number = random.choice(column_numbers)
             row_number = random.choice(row_numbers)
             
-            # 生成表格schema
+            # Generate table schema
             while True:
                 output = generate_table(database_config, table_path,column_number,row_number)
                 if output != 0:
                     break   
             
-            # 表格中插入随机值 
+            # Insert random values into the table.
             insert_random_values(database_config, table_path, column_number, row_number)
             
             if args.context_length:            
@@ -108,23 +107,23 @@ def main(args):
                     delete_table(table_path)    
                     continue      
               
-            # 根据该template生成SQL语句
+            # Generate SQL queries
             if args.template.endswith(".txt"):
                 data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             elif args.template.endswith(".json"):
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             data.extend(data_i)
             i = i + 1
-    # 在旧database上生成数据
+    # Generate data on the exsiting database.
     else:
-        # 获取该Database中所有表格
-        table_names = []  # 存储文件名的列表
+        # Get all tables of this database
+        table_names = []
         for file_name in os.listdir(args.db_path):
             if os.path.isfile(os.path.join(args.db_path, file_name)):
                 table_names.append(os.path.join(args.db_path, file_name))
                 
                 
-        ##############################################
+        ############################################## Perform pre-sampling to determine the sampling number "multiple".
         table_path = random.choice(table_names)
         multiple = 5
         while True:
@@ -145,7 +144,7 @@ def main(args):
                 
                 
         
-        # 根据该表格生成SQL语句
+        # Generate SQL queries
         data = []
         for i in range(args.total_number // args.each_table_number):
             print(str(i) + '\n')
@@ -158,7 +157,7 @@ def main(args):
             
             data.extend(data_i)
             
-    # 保存生成的数据
+    # Save generated data
     random.shuffle(data)
     print(len(data))
     if args.des == '':
