@@ -1,5 +1,5 @@
 python synthetic.py \
-  --db_path ../db/db1 \
+  --db_path ./db/db1 \
   --new_db 1 \
   --total_number 400 \
   --each_table_number  20 \
