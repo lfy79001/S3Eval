@@ -3,7 +3,7 @@ import os
 import random
 import json
 import shutil
-from .table_utils import generate_table, insert_random_values
+from .table_utils import generate_table, insert_random_values, generate_database_config, delete_table, get_table_length
 from .value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
 from .general import general_queries
 from .custom_template import template_queries
@@ -33,7 +33,7 @@ class S3Eval:
             self.template = "./template/easy.txt"
             self.database_config = read_json("./config/fixed/easy_database_config.json")
             self.sql_config = read_json("./config/fixed/easy_sql_config.json")
-        elif data_type.startwith("long"):
+        elif data_type.startswith("long"):
             self.template = "./template/long_context.txt"
             self.database_config = read_json("./config/fixed/long_database_config.json")
             self.sql_config = read_json("./config/fixed/long_sql_config.json")
@@ -58,11 +58,30 @@ class S3Eval:
             elif data_type == "long128k":
                 self.database_config["row_min"] = 2400
                 self.database_config["row_max"] = 2400
-            
+        elif data_type == "custom":
+            self.template = ""
+            self.database_config = ""
+            self.sql_config = "" 
+            self.context_length = 0
+            self.context_length_format = ""
+            self.tokenizer = ""
 
         if process: self.sql_config["output_config"]["process"] = True
         if multistep: self.sql_config["output_config"]["multistep"] = True
         if cot: self.sql_config["output_config"]["cot"] = True
+        
+    # def set_template(self, path):
+    #     self.path = path
+    # def set_database_config(self, database_config):
+    #     self.database_config = database_config
+    # def set_sql_config(self, sql_config):
+    #     self.sql_config = sql_config
+    # def set_context_length(self, context_length):
+    #     self.context_length = context_length
+    # def set_context_length_format(self, context_length_format):
+    #     self.context_length_format = context_length_format
+    # def set_tokenizer(self, tokenizer):
+    #     self.tokenizer = tokenizer
         
     def generate_data(self, total_number, output_path):
         # 判断db文件夹是否存在
@@ -73,12 +92,12 @@ class S3Eval:
             os.makedirs(self.db_path)
 
         
-        sql_templates = []
+        sql_templates = None
         # 产生sql_template, 读取template文件
-        if self.data_type in ['easy']:
+        if self.template.endswith('.txt'):
             sql_templates = read_txt(self.template)
-        elif self.data_type in ['general']:
-            general_dict = read_json(self.template)
+        elif self.template.endswith('.json'):
+            sql_templates = read_json(self.template)
             
 
         # 在新database上生成数据
@@ -86,10 +105,9 @@ class S3Eval:
         # 计算每个table需要生成多少数据
         table_number = total_number // self.each_table_number
         
-        # 表格的行列范围 
-        column_numbers = list(range(self.database_config['col_min'], self.database_config['col_max']+1))
-        row_numbers = list(range(self.database_config['row_min'], self.database_config['row_max']+1))
-        
+    
+        # 生成database的config，表格的列范围，行范围 
+        database_config, column_numbers, row_numbers = generate_database_config(self.database_config, )
         
         ##############################################
         table_name = 'table_try' 
@@ -101,7 +119,7 @@ class S3Eval:
         
         # 生成表格schema
         while True:
-            output = generate_table(self.database_config, table_path,column_number,row_number)
+            output = generate_table(self.database_config, table_path, column_number,row_number)
             if output != 0:
                 break   
         
@@ -112,10 +130,10 @@ class S3Eval:
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if self.data_type in ['easy']:
+                if self.template.endswith('.txt'):
                     data_i = template_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
-                elif self.data_type in ['general']:
-                    data_i = general_queries(general_dict, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
+                elif self.template.endswith('.json'):
+                    data_i = general_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
             if max_generate_samples < self.each_table_number - 1:
@@ -158,10 +176,10 @@ class S3Eval:
             insert_random_values(self.database_config, table_path, column_number, row_number)
             
             # 根据该template生成SQL语句
-            if self.data_type in ['easy']:
+            if self.template.endswith('.txt'):
                 data_i = template_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
-            elif self.data_type in ['general']:
-                data_i = general_queries(general_dict, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
+            elif self.template.endswith('.json'):
+                data_i = general_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
             data.extend(data_i)
             
         # 保存生成的数据
@@ -175,3 +193,6 @@ class S3Eval:
                 f.write('\n')
         print(f"saving to {save_path}")
         return data
+    
+    
+    

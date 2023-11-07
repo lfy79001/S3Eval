@@ -1,5 +1,5 @@
 # install some packages
-pip install tqdm nltk pandas tabulate
+pip install tqdm nltk pandas tabulate transformers
 
 # download 'wordnet' of NLTK toolkit
 python - << EOF

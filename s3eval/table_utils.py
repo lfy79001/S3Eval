@@ -1,5 +1,5 @@
 import sqlite3
-import random
+import random, os
 from nltk.corpus import wordnet as wn
 from datetime import datetime, timedelta
 import string
@@ -11,6 +11,99 @@ sql_keywords = ['select', 'insert', 'update', 'delete', 'create', 'alter', 'drop
 nouns = {x.name().split('.', 1)[0] for x in wn.all_synsets('n') if re.match(r'^[a-zA-Z]+$', x.name().split('.', 1)[0]) and x.name().split('.', 1)[0] not in sql_keywords}
 import pandas as pd
 import shutil
+from transformers import AutoTokenizer
+
+
+def get_table_length(table_path, tokenizer_path, format):
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
+    header, contents, _ = read_table(table_path)
+    
+    table_str = ""
+    if format == 'flatten':
+        header_string = f'The table have {len(header)} columns: '
+        header_string += " | ".join(header) + '\n'
+        value_string = ""
+        for i, row in enumerate(contents):
+            value_string += "row " + str(i+1) + " : "
+            row_cell_values = [str(cell_value).lower() if isinstance(cell_value, str) else str(cell_value) if isinstance(cell_value, int) else '' for cell_value in row]
+            row_value_string = ""
+            for j, value in enumerate(row_cell_values):
+                row_value_string += f"{header[j]} is {value}. "
+            value_string += row_value_string + '\n'
+        table_str = header_string + value_string  
+    elif format == 'markdown':
+        df = pd.DataFrame(contents, columns=header)
+        table_str = df.to_markdown(headers=header, tablefmt="pipe")   
+    table_length = len(tokenizer.tokenize(table_str)) 
+    return table_length
+    
+    
+def generate_database_config(database_config, context_length, tokenizer, context_length_format, db_path):
+    
+    database_config = read_json(database_config) 
+    # 表格的行列范围 
+    column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
+    row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
+
+
+    # 根据指定 context_length 生成数据
+    if context_length != 0 and tokenizer:        
+        database_config['col_min'] = 5
+        database_config['col_max'] = 5
+        
+        result = context_length / 80
+        remainder = result % 5
+        if remainder >= 2.5:
+            result = (result // 5 + 1) * 5
+        else:
+            result = (result // 5) * 5
+        
+        row_last = int(result)
+        
+        while True:
+            database_config['row_min'] = row_last
+            database_config['row_max'] = row_last
+            
+            # 表格的行列范围 
+            column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
+            row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
+            
+            
+            table_name = 'table_try' 
+            table_path = os.path.join(db_path, table_name + '.db')
+            
+            # 表格随机大小
+            column_number = random.choice(column_numbers)
+            row_number = random.choice(row_numbers)
+            
+            # 生成表格schema
+            while True:
+                output = generate_table(database_config, table_path,column_number,row_number)
+                if output != 0:
+                    break   
+            
+            # 表格中插入随机值 
+            insert_random_values(database_config, table_path, column_number, row_number)
+
+            table_length = get_table_length(table_path, tokenizer, context_length_format)
+            
+            if table_length > context_length:
+                row_last -= 5
+                break
+            else:
+                row_last += 5
+            delete_table(table_path)
+
+    delete_table(table_path)
+
+    print(f"database_config: {database_config}\ncolumn_numbers: {column_numbers}, row_numbers: {row_numbers}")
+    return database_config, column_numbers, row_numbers
+
+                
+            
+        
+        
+
 
 
 def read_table(table_path):
@@ -249,3 +342,15 @@ def generate_intermedium_table(original_db_path, contents):
     # 关闭连接
     conn.close()
     return new_db_path
+
+
+def delete_table(table_path):
+    try:
+        os.remove(table_path)
+        print(f"The table does not meet the requirements. Resampling ......")
+    except FileNotFoundError:
+        print(f"The file {table_path} does not exist.")
+    except PermissionError:
+        print(f"Permission denied to delete the file {table_path}.")
+    except Exception as e:
+        print(f"An error occurred while deleting the file {table_path}: {str(e)}") 

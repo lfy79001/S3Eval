@@ -3,7 +3,7 @@ import os
 import random
 import json
 import shutil
-from s3eval.table_utils import generate_table, insert_random_values
+from s3eval.table_utils import generate_table, insert_random_values, generate_database_config, delete_table, get_table_length
 from s3eval.value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
 from s3eval.general import general_queries
 from s3eval.custom_template import template_queries
@@ -36,13 +36,11 @@ def main(args):
     if args.new_db:
         # 计算每个table需要生成多少数据
         table_number = args.total_number // args.each_table_number
-
-        # 读取database config文件 col_min max, 
-        database_config = read_json(args.database_config)
-        
-        # 表格的行列范围 
-        column_numbers = list(range(database_config['col_min'], database_config['col_max']+1))
-        row_numbers = list(range(database_config['row_min'], database_config['row_max']+1))
+    
+        # 生成database的config，表格的列范围，行范围 
+        database_config, column_numbers, row_numbers = \
+            generate_database_config(args.database_config, args.context_length, args.tokenizer, args.context_length_format, args.db_path)
+              
         
         
         ##############################################
@@ -78,22 +76,15 @@ def main(args):
             elif max_generate_samples >= args.each_table_number - 1:
                 break
 
-        try:
-            os.remove(table_path)
-            print(f"The file {table_path} has been successfully deleted.")
-        except FileNotFoundError:
-            print(f"The file {table_path} does not exist.")
-        except PermissionError:
-            print(f"Permission denied to delete the file {table_path}.")
-        except Exception as e:
-            print(f"An error occurred while deleting the file {table_path}: {str(e)}")        
+        delete_table(table_path)       
     
         ############################################ 
         
         
         
         data = []
-        for i in range(table_number):
+        i = 0
+        while i < table_number:
             print(str(i) + '\n')
             table_name = 'table' + str(i)
             table_path = os.path.join(args.db_path, table_name + '.db')
@@ -111,12 +102,18 @@ def main(args):
             # 表格中插入随机值 
             insert_random_values(database_config, table_path, column_number, row_number)
             
+            table_length = get_table_length(table_path, args.tokenizer, args.context_length_format)
+            if args.context_length:            
+                if table_length < args.context_length-0.025*args.context_length or table_length > args.context_length+0.025*args.context_length:
+                    delete_table(table_path)    
+                    continue                    
             # 根据该template生成SQL语句
             if args.synthetic_mode == 'template':
                 data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             elif args.synthetic_mode == 'general':
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             data.extend(data_i)
+            i = i + 1
     # 在旧database上生成数据
     else:
         # 获取该Database中所有表格
@@ -191,6 +188,9 @@ if __name__ == '__main__':
     parser.add_argument('--synthetic_mode', choices=['template', 'general'], default='general')
     parser.add_argument('--template', type=str, default='./template/general.json')
     parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
+    parser.add_argument('--context_length', type=int, default=0)
+    parser.add_argument('--context_length_format', choices=["markdown", "flatten"], default='flatten')
+    parser.add_argument('--tokenizer', type=str, default=None)
     parser.add_argument('--des', type=str, default='')
     args = parser.parse_args()
 

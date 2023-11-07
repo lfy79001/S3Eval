@@ -122,6 +122,9 @@ python synthetic.py \
   --sql_config ./config/sql_config.json \ #   # The most important file, SQL Config File
   --synthetic_mode general \ # general: Standard diverse SQL generation methods(recommended). template: Custom SQL template generation.
   --template  ./template/general.json  \  # SQL grammar/template location
+  --context_length 1000 \                # Optional, Control the context length in token level
+  --context_length_format flatten \     # Optional, Control the context length in token level
+  --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional, Control the context length in token level
   --data_mode eval \ # data format styles, 'eval' is more commonly used. Changes are not recommended.
 ```
 
@@ -133,11 +136,7 @@ If you want to change the database config
   "col_max": 8, // the max number of cols
   "row_min": 15,  // the min number of rows
   "row_max": 40,  // the max number of rows
-  "text_int_date": [0.55, 0.35, 0.1], // text,int,date  header ratio
-  "text_int_date_fix": ["TEXT", "TEXT", "INT", "INT", "INT"], // Specify the type of each header
-  // Probability of duplicate values in each column
-  "value_repeat_ratio": [0, 0.2, 0.3, 0, 0, 0, 0, 0, 0.2, 0.5], 
-  "value_repeat_ratio_fix": ["random", "random"], // Specify the duplicate values of each column
+  "text_int_date": [0.55, 0.35, 0.1]  // text,int,date  header ratio
 }
 ```
 
