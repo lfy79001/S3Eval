@@ -8,7 +8,7 @@ from .parser import filter_times, calculate_times
 from .value_utils import random_with_weight, random_dict_key, random_dict_value, remove_double_spaces, random_dict_key_value, extract_subsql_position, merge_dicts
 from .table_utils import execute_sql, transform_output_to_tablestr, generate_intermedium_table, transform_output_to_string
 
-code_english = {'>': 'greater than', '<': 'less than', '=': 'less than', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
+code_english = {'>': 'greater than', '<': 'less than', '=': 'equal to', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
 
 
