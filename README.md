@@ -13,6 +13,8 @@ Work in progress......
 
 # 🔥 Updates
 
+- [**2023-11-08**]: We update code and support multilingual test.
+
 - [**2023-10-24**]: We released our [code](https://github.com/lfy79001/S3Eval) and [paper](https://arxiv.org/abs/2310.15147).
 
 # 🔧 Task
