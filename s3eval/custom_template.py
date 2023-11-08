@@ -4,7 +4,7 @@ from tqdm import tqdm
 import random
 import pandas as pd
 import sqlite3
-from .custom_template_parser import generate_process, generate_multiturn
+from .custom_template_parser import generate_process, generate_multiturn, generate_multiturn_zh
 from .custom_template_parser import cover_column, cover_row, calculate_depth, calculate_times
 from .table_utils import execute_sql
 
@@ -104,7 +104,7 @@ def control_sql(header, contents, sql, answer, process, details, sql_config, tab
     
     return True
 
-def template_queries(sql_templates, num_queries, table_path, sql_config, multiple, data_mode='ft'):
+def template_queries(sql_templates, num_queries, table_path, sql_config, multiple, language='en',data_mode='ft'):
     header, contents, types = read_table(table_path)
 
     queries = []        
@@ -334,8 +334,10 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, multipl
                 new_dict["sql2"] = sql2
                 new_dict["answer1"] = answer1
                 new_dict["answer2"] = answer2
-            
-            multiturn = generate_multiturn(details, header)
+            if language == 'en':
+                multiturn = generate_multiturn(details, header)
+            elif language == 'zh':
+                multiturn = generate_multiturn_zh(details, header)
             new_dict['multiturn'] = ''.join(multiturn)
             new_data.append(new_dict)
             
@@ -374,7 +376,6 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, multipl
         output_data = output_data[:num_queries]   
         print(len(new_sql), len(new_data), len(output_data))    
         return output_data
-
 
 
 

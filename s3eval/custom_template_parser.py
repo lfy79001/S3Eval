@@ -94,6 +94,101 @@ def generate_multiturn(details, header):
     
 
 
+def generate_multiturn_zh(details, header):
+    def find_column(seq):
+        if "*" in seq:
+            return ["*"]
+        else:
+            output = []
+            for h in header:
+                if h in seq:
+                    output.append(h)
+            return output
+    multiturn = []
+    
+    if 'where' in details.keys():
+        where_sql = details['where'].replace('where', '')    
+        multiturn.append(f"根据条件筛选行，行中指定列的单元格需要满足：{where_sql}.")
+    if 'group by' in details.keys():
+        group_sql = details['group by']
+        multiturn.append(f"然后根据每行中 '{group_sql}' 的值对所有行进行分组。")
+    if 'having' in details.keys():
+        group_sql = details['having'].replace('having', '')
+        aggregate_dict = {'sum':"'{}'的和", 'count':"'{}'的数量",
+                        'min':"'{}'的最小值",
+                        'max':"'{}'的最大值",
+                        'avg':"'{}'的平均值"}
+
+        condition = ""
+        if 'count ( * )' in group_sql:
+            index = group_sql.find('count ( * )')
+            result = group_sql[index + len('count ( * )'):]
+            condition += f"{result}组中行的数量"
+        else:
+            if any(agg in group_sql for agg in aggregate_dict.keys()):
+                agg = 0
+                for item in aggregate_dict.keys():
+                    if item in group_sql:
+                       agg = item; break
+                column = find_column(group_sql)[0]
+                out = aggregate_dict[agg].format(column)
+                eq_and_number = ' '.join(group_sql.split(' ')[-2:])
+                condition += f"组中的行满足 {out} {eq_and_number}"
+            else:
+                condition += f"组中的行满足 {group_sql}"
+        
+        multiturn.append(f"然后按组进行筛选，筛选条件为: {condition}.")
+    
+    select_sql = details['select']
+    select_column = select_sql[0][0]
+    if 'select' in details.keys():
+        select_agg = select_sql[1]
+        aggregate_dict = {'sum':"'{}'的和", 'count':"'{}'的数量",
+                        'min':"'{}'的最小值",
+                        'max':"'{}'的最大值",
+                        'avg':"'{}'的平均值"}
+        if select_column == '*':
+            if select_agg is None:
+                multiturn.append(f"最终的答案，是筛选的到的行的数量")
+            else:
+                multiturn.append(f"选择已筛选的行中的所有列，然后求它们{aggregate_dict[select_agg]}作为答案")
+        else:
+            if select_agg is None:
+                multiturn.append(f"选择已筛选的行中的 '{select_column}' 列的值作为答案")
+            else:
+                multiturn.append(f"选择已筛选的行中的 '{select_column}' 列的值，然后求它们{aggregate_dict[select_agg]}作为答案.")
+    
+    if 'order by' in details.keys():
+        
+        # if len(details['order by'][0][0])>1:
+        #     import pdb; pdb.set_trace()
+        order_type = {'asc': ['升序', '最大值'],
+                      'desc': ['降序', '最小值']}
+        
+        shunxu = details['order by'][1]
+        agg = details['order by'][0][1]
+        order_column = details['order by'][0][0][0]
+        if len(details['order by'][0][0]) > 1:
+            order_column = f" {details['order by'][0][0][0]} 和 {details['order by'][0][0][1]} 之差"
+        if agg is None:
+            multiturn.append(f"最终, 这些值按 它们所在行的'{order_column}'列的值 {order_type[shunxu][0]} 排序，然后选择 {order_type[shunxu][1]}")      
+        else:
+            aggregate_dict = {'sum':"{}的和", 'count':"{}的数量",
+                            'min':"{}的最小值",
+                            'max':"{}的最大值",
+                            'avg':"{}的平均值"}
+            if order_column == '*':
+                multiturn.append(f"最终, 这些值按 它们所在行的数量{order_type[shunxu][0]} 排序，然后选择 {order_type[shunxu][1]}")
+            else:
+                condition = aggregate_dict[agg].format(order_column+"的值")
+                multiturn.append(f"最终, 这些值按 它们所在行的 '{condition}' {order_type[shunxu][0]} 排序，然后选择 {order_type[shunxu][1]}")         
+        
+    return multiturn
+    
+
+
+
+
 def find_position(header, contents, sql, keyword, db_path):
     def find_column(seq):
         if "*" in seq:

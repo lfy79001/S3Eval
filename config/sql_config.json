@@ -48,7 +48,7 @@
   "n_shot": 5,
   "output_config":{
     "process": false,
-    "multistep": false,
+    "multistep": true,
     "cot": false
   }
 }

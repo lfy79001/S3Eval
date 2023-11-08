@@ -5,10 +5,15 @@ import json
 import shutil
 from s3eval.table_utils import generate_table, insert_random_values, generate_database_config, delete_table, get_table_length
 from s3eval.value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
-from s3eval.general import general_queries
 from s3eval.custom_template import template_queries
 
 def main(args):
+    if args.language == "en":
+        from s3eval.general import general_queries
+    elif args.language == "zh":
+        from s3eval.general_zh import general_queries
+    
+    
     # Check if the "db" folder exists
     if args.new_db:
         if os.path.exists(args.db_path):
@@ -66,7 +71,7 @@ def main(args):
             generate_sample_number = []
             for _ in range(2):
                 if args.template.endswith(".txt"):
-                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
                 elif args.template.endswith(".json"):
                     data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
                 generate_sample_number.append(len(data_i))
@@ -109,7 +114,7 @@ def main(args):
               
             # Generate SQL queries
             if args.template.endswith(".txt"):
-                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
             elif args.template.endswith(".json"):
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             data.extend(data_i)
@@ -130,7 +135,7 @@ def main(args):
             generate_sample_number = []
             for _ in range(2):
                 if args.template.endswith(".txt"):
-                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
                 elif args.template.endswith(".json"):
                     data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
                 generate_sample_number.append(len(data_i))
@@ -151,7 +156,7 @@ def main(args):
             table_path = random.choice(table_names)
             
             if args.template.endswith(".txt"):
-                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
             elif args.template.endswith(".json"):
                 data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             
@@ -186,10 +191,11 @@ if __name__ == '__main__':
     parser.add_argument('--database_config', type=str, default='./config/database_config.json')
     parser.add_argument('--sql_config', type=str, default='./config/sql_config.json')
     parser.add_argument('--template', type=str, default='./template/general.json')
-    parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
     parser.add_argument('--context_length', type=int, default=0)
     parser.add_argument('--context_length_format', choices=["markdown", "flatten"], default='flatten')
     parser.add_argument('--tokenizer', type=str, default=None)
+    parser.add_argument('--data_mode', choices=['ft', 'eval'], default='eval')
+    parser.add_argument('--language', type=str, default='en')
     parser.add_argument('--des', type=str, default='')
     args = parser.parse_args()
 
