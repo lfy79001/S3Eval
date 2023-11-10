@@ -234,7 +234,12 @@ python synthetic.py \
   },
   "answer_cells_number": 1,  // usually remains 1 in this repo, we often just test the sql whose answer is from one cell.
   "include": [],
-  "exclude": []
+  "exclude": [],
+  "output_config":{
+    "process": false,   // Whether to output SQL generation process
+    "multistep": true,   // Whether to output multi-step instruction
+    "cot": false        // Whether to output chain-of-thought data
+  }
 }
 ```
 
