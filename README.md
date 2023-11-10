@@ -329,13 +329,11 @@ This approach has low SQL diversity
 # Bibtex
 
 ```bash
-@misc{lei2023s3eval,
-      title={S3Eval: A Synthetic, Scalable, Systematic Evaluation Suite for Large Language Models}, 
-      author={Fangyu Lei and Qian Liu and Yiming Huang and Shizhu He and Jun Zhao and Kang Liu},
-      year={2023},
-      eprint={2310.15147},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
+@article{lei2023s3eval,
+  title={S3Eval: A Synthetic, Scalable, Systematic Evaluation Suite for Large Language Models},
+  author={Lei, Fangyu and Liu, Qian and Huang, Yiming and He, Shizhu and Zhao, Jun and Liu, Kang},
+  journal={arXiv preprint arXiv:2310.15147},
+  year={2023}
 }
 ```
 
