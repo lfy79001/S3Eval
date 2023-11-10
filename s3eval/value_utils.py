@@ -76,13 +76,21 @@ def read_json(path):
         total_data = json.load(f)
     return total_data
 
-def read_txt(path):
+def read_txt_item(path):
     output = []
     with open(path, 'r') as file:
         for line in file:
             line = line.strip()
             line_list = line.split()
             output.append(line_list)
+    return output
+
+def read_txt(path):
+    output = []
+    with open(path, 'r') as file:
+        for line in file.readlines():
+            line = line.strip()
+            output.append(line)
     return output
 
 def save_txt(path, data):

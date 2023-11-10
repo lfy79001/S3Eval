@@ -5,13 +5,14 @@ import json
 import shutil
 from s3eval.table_utils import generate_table, insert_random_values, generate_database_config, delete_table, get_table_length
 from s3eval.value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
-from s3eval.custom_template import template_queries
+from s3eval.fine_template import template_queries
+from s3eval.value_utils import random_with_weight
 
 def main(args):
     if args.language == "en":
-        from s3eval.general import general_queries
+        from s3eval.coarse_template import general_queries
     elif args.language == "zh":
-        from s3eval.general_zh import general_queries
+        from s3eval.coarse_template_zh import general_queries
     
     
     # Check if the "db" folder exists
@@ -25,13 +26,13 @@ def main(args):
         if not os.path.exists(args.db_path):
             raise Exception(f"not have this database {args.db_path}")
     
-    sql_templates = []
-    
-    # Read the template file
-    if args.template.endswith(".txt"):
-        sql_templates = read_txt(args.template)
-    elif args.template.endswith(".json"):
-        general_dict = read_json(args.template)
+    templates = read_txt(args.template)
+    fine_templates, coarse_templates = [], []
+    for item in templates:
+        if 'int_col' in item or 'text_col' in item:
+            fine_templates.append(item)
+        else:
+            coarse_templates.append(item)
         
     if os.path.exists(args.sql_config):
         sql_config = read_json(args.sql_config)
@@ -70,10 +71,13 @@ def main(args):
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if args.template.endswith(".txt"):
-                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
-                elif args.template.endswith(".json"):
-                    data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+
+                # Generate SQL queries
+                if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                    data_i = template_queries(fine_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
+                else:
+                    data_i = general_queries(coarse_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                    
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
             if max_generate_samples < args.each_table_number - 1:
@@ -88,7 +92,15 @@ def main(args):
         
         data = []
         i = 0
+        flag = 0
         while i < table_number:
+            if flag > 15:
+                flag = 0
+                database_config['row_min'] -= 5
+                database_config['row_max'] -= 5
+                row_numbers = [x - 5 for x in row_numbers]
+                
+            
             print(str(i) + '\n')
             table_name = 'table' + str(i)
             table_path = os.path.join(args.db_path, table_name + '.db')
@@ -108,16 +120,18 @@ def main(args):
             
             if args.context_length:            
                 table_length = get_table_length(table_path, args.tokenizer, args.context_length_format)
-                if table_length < args.context_length-0.025*args.context_length or table_length > args.context_length+0.025*args.context_length:
-                    delete_table(table_path)    
+                if table_length < args.context_length-0.04*args.context_length or table_length > args.context_length+0.04*args.context_length:
+                    delete_table(table_path) 
+                    flag += 1   
                     continue      
-              
+            
             # Generate SQL queries
-            if args.template.endswith(".txt"):
-                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
-            elif args.template.endswith(".json"):
-                data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+            if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                data_i = template_queries(fine_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
+            else:
+                data_i = general_queries(coarse_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             data.extend(data_i)
+            flag = 0
             i = i + 1
     # Generate data on the exsiting database.
     else:
@@ -134,10 +148,11 @@ def main(args):
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if args.template.endswith(".txt"):
-                    data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
-                elif args.template.endswith(".json"):
-                    data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+                # Generate SQL queries
+                if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                    data_i = template_queries(fine_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
+                else:
+                    data_i = general_queries(coarse_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
             if max_generate_samples < args.each_table_number - 1:
@@ -155,10 +170,11 @@ def main(args):
             print(str(i) + '\n')
             table_path = random.choice(table_names)
             
-            if args.template.endswith(".txt"):
-                data_i = template_queries(sql_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
-            elif args.template.endswith(".json"):
-                data_i = general_queries(general_dict, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
+            # Generate SQL queries
+            if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                data_i = template_queries(fine_templates, args.each_table_number, table_path, sql_config, multiple=multiple, language=args.language, data_mode=args.data_mode)
+            else:
+                data_i = general_queries(coarse_templates, args.each_table_number, table_path, sql_config, multiple=multiple, data_mode=args.data_mode)
             
             data.extend(data_i)
             

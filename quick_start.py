@@ -5,8 +5,9 @@ import json
 import shutil
 from s3eval.table_utils import generate_table, insert_random_values, generate_database_config, delete_table, get_table_length
 from s3eval.value_utils import random_int, read_json, read_jsonl, read_txt, random_big_int
-from s3eval.general import general_queries
-from s3eval.custom_template import template_queries
+from s3eval.coarse_template import general_queries
+from s3eval.fine_template import template_queries
+from s3eval.value_utils import random_with_weight
 
 
 class S3Eval:
@@ -23,10 +24,10 @@ class S3Eval:
 
         self.database_config = {}        
         self.sql_config = {}
-        self.template = "./template/general.json"
+        self.template = "./template/general.txt"
         
         if data_type == "general":
-            self.template = "./template/general.json"
+            self.template = "./template/general.txt"
             self.database_config = read_json("./config/fixed/general_database_config.json")
             self.sql_config = read_json("./config/fixed/general_sql_config.json")
         elif data_type == "easy":
@@ -78,13 +79,15 @@ class S3Eval:
         else:
             os.makedirs(self.db_path)
 
-        
-        sql_templates = None
-
-        if self.template.endswith('.txt'):
-            sql_templates = read_txt(self.template)
-        elif self.template.endswith('.json'):
-            sql_templates = read_json(self.template)
+            
+        templates = read_txt(self.template)
+        fine_templates, coarse_templates = [], []
+        for item in templates:
+            if 'int_col' in item or 'text_col' in item:
+                fine_templates.append(item)
+            else:
+                coarse_templates.append(item)
+            
             
         table_number = total_number // self.each_table_number
         
@@ -113,10 +116,10 @@ class S3Eval:
         while True:
             generate_sample_number = []
             for _ in range(2):
-                if self.template.endswith('.txt'):
-                    data_i = template_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
-                elif self.template.endswith('.json'):
-                    data_i = general_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
+                if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                    data_i = template_queries(fine_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple)
+                else:
+                    data_i = general_queries(coarse_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple)
                 generate_sample_number.append(len(data_i))
             max_generate_samples = max(generate_sample_number)
             if max_generate_samples < self.each_table_number - 1:
@@ -157,10 +160,10 @@ class S3Eval:
             insert_random_values(self.database_config, table_path, column_number, row_number)
             
 
-            if self.template.endswith('.txt'):
-                data_i = template_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
-            elif self.template.endswith('.json'):
-                data_i = general_queries(sql_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple, data_mode="eval")
+            if random_with_weight([True, False], [len(fine_templates), len(coarse_templates)]):
+                data_i = template_queries(fine_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple)
+            else:
+                data_i = general_queries(coarse_templates, self.each_table_number, table_path, self.sql_config, multiple=multiple)
             data.extend(data_i)
             
         # Save data
@@ -177,6 +180,6 @@ class S3Eval:
     
     
     
-s3eval = S3Eval("general")  # general, easy, long2k, long4k, long8k, long16k
+s3eval = S3Eval("long2k")  # general, easy, long2k, long4k, long8k, long16k
 output_path = "./data/general1.json"
-data = s3eval.generate_data(500, output_path)
+data = s3eval.generate_data(100, output_path)

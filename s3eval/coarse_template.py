@@ -4,11 +4,11 @@ from tqdm import tqdm
 import random
 import pandas as pd
 import sqlite3
-from .parser import filter_times, calculate_times
+from .fine_template_utils import filter_times, calculate_times
 from .value_utils import random_with_weight, random_dict_key, random_dict_value, remove_double_spaces, random_dict_key_value, extract_subsql_position, merge_dicts
 from .table_utils import execute_sql, transform_output_to_tablestr, generate_intermedium_table, transform_output_to_string
 
-code_chinese = {'>': '大于', '<': '小于', '=': '等于', 'count':'数量', 'max': '最大值', 'min': '最小值', 'sum': '和', 'avg':'平均值', '+':'之和', '-':'之差', '*':'之积', '/':'之商'}
+code_english = {'>': 'greater than', '<': 'less than', '=': 'equal to', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
 
 
@@ -119,12 +119,12 @@ def select_condition(text_cols, int_cols):
         if random_with_weight([True, False], [0.8, 0.2]):
             select_part = f"{select_col1} {cal_op} {select_col2}"
             select_cols = [select_col1, select_col2]
-            select_instruction = f"选择，并计算，已筛选行中，两列 {select_col1} 和 {select_col2}{code_chinese[cal_op]}。 "
+            select_instruction = f"Select calculate {code_english[cal_op]} the values in columns {select_col1} and {select_col2} in filtered rows."
         else:
             agg = random.choice(['min', 'max', 'count', 'sum', 'avg'])
             select_part = f"{agg} ( {select_col1} {cal_op} {select_col2} )"
             select_cols = [select_col1, select_col2]
-            select_instruction = f"选择，并计算，已筛选行中，两列 {select_col1} 和 {select_col2}{code_chinese[cal_op]}，并求{code_chinese[agg]}。 "
+            select_instruction = f"Select calculate {code_english[agg]} {code_english[cal_op]} the values in columns {select_col1} and {select_col2} in filtered rows."
             select_agg = agg
     # Common select_col
     else:    
@@ -133,20 +133,20 @@ def select_condition(text_cols, int_cols):
         if random_with_weight([True, False], [0.8, 0.2]):
             select_part = select_col
             select_cols = [select_col]
-            select_instruction = f"选择，已筛选行中的 {select_col} 列"
+            select_instruction = f"Select values of {select_col} column in filtered rows."
             select_process = (select_col, "")
         else:
             if select_col in int_cols:
                 agg = random.choice(['min', 'max', 'count', 'sum', 'avg'])
                 select_part = f"{agg} ( {select_col} )"
                 select_cols = [select_col]
-                select_instruction = f"选择，已筛选行中的{select_col} 列，并求{code_chinese[agg]}"
+                select_instruction = f"Select {code_english[agg]} values of {select_col} column in filtered rows."
                 select_agg = agg
                 select_process = (select_col, select_agg)
             elif select_col in text_cols:
                 select_part = f"count ( {select_col} )"
                 select_cols = [select_col]
-                select_instruction = f"选择，已筛选行中的{select_col} 列的数量"
+                select_instruction = f"Select the number of cells of {select_col} column in filtered rows."
                 select_agg = 'count'
                 select_process = (select_col, select_agg)
     return select_part, select_cols, select_instruction, select_agg, select_process
@@ -156,7 +156,7 @@ def where_condition(header, contents, text_cols, int_cols):
     where_num = random_with_weight([1, 2], [0.7, 0.3])
     where_string_output = ""
     where_cols = []
-    where_instruction = "请按需要满足的列条件筛选行： "
+    where_instruction = "Please filter the rows by the column conditions, which need to be met: "
     where_string = []
     where_process = []
     for i in range(where_num):
@@ -170,7 +170,7 @@ def where_condition(header, contents, text_cols, int_cols):
                 # condition
                 where_process.append( (select_col, op, value)  )
                 # to NL
-                where_string.append(f"列 {select_col} 的值是 {value}.")
+                where_string.append(f"The value of column {select_col} is {value}.")
             elif op == 'like':
                 value = random.choice(contents)[header.index(select_col)]
                 like_value = value[:3]
@@ -178,7 +178,7 @@ def where_condition(header, contents, text_cols, int_cols):
                 # condition
                 where_process.append( (select_col, op, like_value)  )
                 # to NL
-                where_string.append(f"列 {select_col} 的值模糊匹配'{like_value}%'.")
+                where_string.append(f"The value of column {select_col} is required to fuzzy match '{like_value}%'.")
             elif op == 'in':
                 in_number = random_with_weight([2,3],[0.6,0.4])
                 value = [row[header.index(select_col)] for row in random.choices(contents, k=3)]
@@ -187,13 +187,13 @@ def where_condition(header, contents, text_cols, int_cols):
                     # condition
                     where_process.append( (select_col, op, [value[0], value[1]])  )
                     # to NL
-                    where_string.append(f"列 {select_col} 的值是 '{value[0]}' 或 '{value[1]}'.")
+                    where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}'.")
                 elif in_number == 3:
                     in_value = f"( '{value[0]}' , '{value[1]}' , '{value[2]}' )"
                     # condition
                     where_process.append( (select_col, op, [value[0], value[1], value[2]])  )
                     # to NL
-                    where_string.append(f"列 {select_col} 的值是 '{value[0]}' 或 '{value[1]}' 或 '{value[2]}'.")
+                    where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}' or '{value[2]}'.")
                 op_value = f"{op} {in_value}"
         elif select_col in int_cols:
             op = random.choice(['>', '<', '='])
@@ -202,7 +202,7 @@ def where_condition(header, contents, text_cols, int_cols):
             # condition
             where_process.append( (select_col, op, value)  )
             # to NL
-            where_string.append(f"列 {select_col} 的值 {code_chinese[op]} {value}.")
+            where_string.append(f"The value of column {select_col} needs to be {code_english[op]} {value}.")
             
         if i == 0:
             where_string_output += f"where {select_col} {op_value}"
@@ -213,7 +213,7 @@ def where_condition(header, contents, text_cols, int_cols):
     return where_string_output, where_cols, where_instruction, where_process
 
 def order_condition(text_cols, int_cols, mode='single'):
-    order_instruction_temp = "将已选择的值按 {} {}排序，并且选择最{}的值。"
+    order_instruction_temp = "Sort the obtained values in {} order of {} and select the {} value to get the answer."
     order = random.choice(['asc', 'desc'])
     order_process = []
 
@@ -222,30 +222,30 @@ def order_condition(text_cols, int_cols, mode='single'):
         is_distinct_select_col = random.choice([f'count ( {select_col} )', f'count ( distinct {select_col} )'])
         if order == 'asc':
             if 'distinct' in is_distinct_select_col:
-                order_instruction = order_instruction_temp.format(f"{select_col} 列未重复的数量", '升序', '小')
+                order_instruction = order_instruction_temp.format('ascending', f"the number of non-repeating {select_col}", 'smallest')
             else:
-                order_instruction = order_instruction_temp.format(f"{select_col} 列的数量", "升序", '小')
+                order_instruction = order_instruction_temp.format('ascending', f"the number of {select_col}", 'smallest')
             order_process.append(   (select_col, 0)   )
         else:
             if 'distinct' in is_distinct_select_col:
-                order_instruction = order_instruction_temp.format(f"{select_col} 列未重复的数量", "降序", '大')
+                order_instruction = order_instruction_temp.format('descending', f"the number of non-repeating {select_col}", 'largest')
             else:
-                order_instruction = order_instruction_temp.format(f"{select_col} 列的数量", "升序", '大')
+                order_instruction = order_instruction_temp.format('descending', f"the number of {select_col}", 'largest')
             order_process.append(   (select_col, 1)   )
         return f"order by {is_distinct_select_col} {order} limit 1", [select_col], order_instruction, order_process
     else:
         select_col = random.choice(int_cols)
         if order == 'asc':
-            order_instruction = order_instruction_temp.format('升序', select_col, '小')
+            order_instruction = order_instruction_temp.format('ascending', select_col, 'smallest')
             order_process.append(   (select_col, 0)   )
         else:
-            order_instruction = order_instruction_temp.format('降序', select_col, '大')
+            order_instruction = order_instruction_temp.format('descending', select_col, 'largest')
             order_process.append(   (select_col, 1)   )
         return f"order by {select_col} {order} limit 1", [select_col], order_instruction, order_process
     
     
 def having_condition(header, contents, text_cols, int_cols):
-    having_instruction = "然后根据以下条件筛选某些组："
+    having_instruction = "Then filter some groups by the following condition:"
     
     condition_num = random_with_weight([1, 2], [0.7, 0.3])
     having_conditions = []
@@ -264,9 +264,9 @@ def having_condition(header, contents, text_cols, int_cols):
                 having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
                 having_cols.append(select_col)
                 if 'distinct' in is_distinct_select_col:
-                    having_conditions_instructions.append(f"{select_col} 列未重复的数量 {code_chinese[op]} {str(num1)}")
+                    having_conditions_instructions.append(f"the number of non-repeating column {select_col} is {code_english[op]} {str(num1)}.")
                 else:
-                    having_conditions_instructions.append(f"{select_col} 列的数量 {code_chinese[op]} {str(num1)}.")
+                    having_conditions_instructions.append(f"the number of column {select_col} is {code_english[op]} {str(num1)}.")
                 having_process.append( (select_col, op, num1)  )
             else:
                 agg = random.choice(['count', 'max', 'min', 'sum', 'avg'])
@@ -275,16 +275,16 @@ def having_condition(header, contents, text_cols, int_cols):
                     having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
                     having_cols.append(select_col)
                     if 'distinct' in is_distinct_select_col:
-                        having_conditions_instructions.append(f"{select_col} 列未重复的数量 {code_chinese[op]} {str(num1)}.")
+                        having_conditions_instructions.append(f"the number of non-repeating column {select_col} is {code_english[op]} {str(num1)}.")
                     else:
-                        having_conditions_instructions.append(f"{select_col} 列的数量 {code_chinese[op]} {str(num1)}.")
+                        having_conditions_instructions.append(f"the number of column {select_col} is {code_english[op]} {str(num1)}.")
                     having_process.append( (select_col, op, num1, agg)  )
                 else:
                     agg_select_col = f"{agg} ( {select_col} )"
                     value = f"{random.choice(contents)[header.index(select_col)]}"
                     having_conditions.append(f"{agg_select_col} {op} {str(value)}")
                     having_cols.append(select_col)
-                    having_conditions_instructions.append(f"{select_col} 列的{code_chinese[agg]} {code_chinese[op]} {str(num1)}.")
+                    having_conditions_instructions.append(f"{code_english[agg]} column {select_col} is {code_english[op]} {str(value)}.")
                     having_process.append( (select_col, op, num1, agg)  )
         # no aggregation
         else:
@@ -293,7 +293,7 @@ def having_condition(header, contents, text_cols, int_cols):
             value = f"{random.choice(contents)[header.index(select_col)]}"
             having_conditions.append(f"{select_col} {op} {str(value)}")
             having_cols.append(select_col)
-            having_conditions_instructions.append(f"{select_col} 列 {code_chinese[op]} {str(value)}.")
+            having_conditions_instructions.append(f"the column {select_col} is {code_english[op]} {str(value)}.")
             having_process.append( (select_col, op, value)  )
     having_conditions_output = ""
     if len(having_conditions) == 1:
@@ -311,29 +311,42 @@ def group_condition(header, contents, text_cols, int_cols):
     group_col = random.choice(text_cols)
     
     mode = random.choice(['having', 'order'])
-    group_instruction = f"然后根据剩余行中{group_col}的值对行进行分组."
+    group_instruction = f"The rows are then grouped according to the value of the {group_col} in the remaining rows."
     group_process = [group_col]
     return f"group by {group_col}", [group_col], group_instruction, group_process
         
     
      
-def general_queries(sql_templates, num_queries, table_path, sql_config, multiple, data_mode='ft'):
+def general_queries(coarse_templates, num_queries, table_path, sql_config, multiple, data_mode='ft'):
     header, contents, types = read_table(table_path)
     text_cols = [col for col, col_type in zip(header, types) if col_type in ['TEXT', 'DATE']]
     int_cols = [col for col, col_type in zip(header, types) if col_type in ['INT']]
     
+    sql_templates = {}
+    
+    s_i, d_i, t_i = 1, 1, 1
+    
+    for template in coarse_templates:
+        if template.count("(") == 0:
+            sql_templates.update({f"s{s_i}":template})
+            s_i += 1
+        elif template.count("(") == 1:
+            sql_templates.update({f"d{d_i}":template})
+            d_i += 1
+        elif template.count("(") == 2:
+            sql_templates.update({f"t{t_i}":template})
+            t_i += 1
+
+    nest_filter = sql_config['nest']
+
     new_templates = {}
-    if len(sql_config['select_grammar']) != 0:
-        new_templates.update({key: value for key, value in sql_templates.items() if key in sql_config['select_grammar']})
-    else:
-        nest_filter = sql_config['nest']
-        for nest in nest_filter:
-            if nest == 1:
-                new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('s')})
-            elif nest == 2:
-                new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('d')})
-            elif nest == 3:
-                new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('t')})
+    for nest in nest_filter:
+        if nest == 1:
+            new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('s')})
+        elif nest == 2:
+            new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('d')})
+        elif nest == 3:
+            new_templates.update({key: value for key, value in sql_templates.items() if key.startswith('t')})
             
     def get_select_rows(query):
         new_query = query.replace('<order_condition>', '')
@@ -399,13 +412,13 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
                 temp_sql1 = f"select {select_string} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
                 output1 = execute_sql(table_path, temp_sql1)
                 result1 = transform_output_to_string(output1)
-                instrutions.append(f"从已筛选的 {cols['select_col'][0]} 列中选择单元格")
+                instrutions.append(f"Select cells of {cols['select_col'][0]} column in filtered rows.")
                 intermediems.append(result1)
                 
                 temp_sql2 = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
                 output2 = execute_sql(table_path, temp_sql2)
                 result2 = transform_output_to_string(output2)
-                instrutions.append(f"计算 {code_chinese[agg]} 单元格.")
+                instrutions.append(f"Calculate {code_english[agg]} cells.")
                 intermediems.append(result2)
         if change_string["order"] != "":
             output = execute_sql(table_path, query)
@@ -614,6 +627,7 @@ def general_queries(sql_templates, num_queries, table_path, sql_config, multiple
             new_dict['answer'] = data['answer']
             output_data.append(new_dict)
             
+
     output_data = output_data[:num_queries]  
     print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:{len(output_data)}") 
     return output_data

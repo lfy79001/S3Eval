@@ -4,8 +4,8 @@ from tqdm import tqdm
 import random
 import pandas as pd
 import sqlite3
-from .custom_template_parser import generate_process, generate_multiturn, generate_multiturn_zh
-from .custom_template_parser import cover_column, cover_row, calculate_depth, calculate_times
+from .fine_template_utils import generate_process, generate_multiturn, generate_multiturn_zh
+from .fine_template_utils import cover_column, cover_row, calculate_depth, calculate_times
 from .table_utils import execute_sql
 
 
@@ -118,7 +118,7 @@ def template_queries(sql_templates, num_queries, table_path, sql_config, multipl
 
         op = ['>', '<', '=']
         # col = int_col + text_col
-        query = ' '.join(query)
+        # query = ' '.join(query)
         
         if '<text_col1> <op1> <text_1>' in query:
             query.replace('<op1>', '=')

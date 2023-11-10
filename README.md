@@ -124,9 +124,9 @@ python synthetic.py \
   --database_config ./config/database_config.json \ # Table Config
   --sql_config ./config/sql_config.json \ #   # SQL Config File
   --template  ./template/general.json  \  # SQL Template
-  --context_length 1000 \                # Optional, Control the context length in token level
-  --context_length_format flatten \     # Optional, Control the context length in token level
-  --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional, Control the context length in token level
+  --context_length 1000 \                # Optional! Control the context length in token level
+  --context_length_format flatten \     # Optional! Control the context length in token level
+  --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional! Control the context length in token level, 
 ```
 
 ### Generate data with custom template
