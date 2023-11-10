@@ -105,6 +105,31 @@ output_path = "./data/general1.json"  # Custom output file name
 data = s3eval.generate_data(500, output_path) # total_number, output_path
 ```
 
+### Generate data with custom template
+
+You can change __template__ according to your needs, for example
+
+```bash
+# parameter introduction
+python synthetic.py \
+  --db_path ./db/db1 \  # Location of the generated tables
+  --new_db 1 \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
+  --total_number 1000 \   # How many data do you want to generate
+  --each_table_number  50 \  # How many data do you want to generate on one table
+  --database_config ./config/database_config.json \ # Table Config
+  --sql_config ./config/sql_config.json \ #   # SQL Config File
+  --template  ./template/easy.txt
+```
+
+There are two template formats: 
+
+- Fine Template: used for fine-grained control and analysis (e.g. where_condition.txt)
+- Coarse Template: used to generate diverse SQL for overall analysis  (e.g. general.txt)
+
+You can customize the required template settings
+
+
+
 ### Generate data with specific number of tokens
 
 If you want to quickly generate data with specific number of tokens,
@@ -128,29 +153,6 @@ python synthetic.py \
   --context_length_format flatten \     # Optional! Control the context length in token level
   --tokenizer mistralai/Mistral-7B-v0.1 \ # Optional! Control the context length in token level, 
 ```
-
-### Generate data with custom template
-
-You can change __template__ according to your needs, for example
-
-```bash
-# parameter introduction
-python synthetic.py \
-  --db_path ./db/db1 \  # Location of the generated tables
-  --new_db 1 \   # True: create new tables in this db_path, then generate data. False: use existing tables to generate data
-  --total_number 1000 \   # How many data do you want to generate
-  --each_table_number  50 \  # How many data do you want to generate on one table
-  --database_config ./config/database_config.json \ # Table Config
-  --sql_config ./config/sql_config.json \ #   # SQL Config File
-  --template  ./template/easy.txt
-```
-
-There are two template formats: 
-
-- Fine Template: used for fine-grained control and analysis (e.g. where_condition.txt)
-- Coarse Template: used to generate diverse SQL for overall analysis  (e.g. general.txt)
-
-You can customize the required template settings
 
 
 
