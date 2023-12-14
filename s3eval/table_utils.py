@@ -104,8 +104,7 @@ def generate_database_config(database_config, context_length, tokenizer_path, co
 
 
 
-def read_table(table_path):
-    table_name = 'my_table'
+def read_table(table_path, table_name='my_table'):
     conn = sqlite3.connect(table_path)
     cursor = conn.cursor()
     cursor.execute(f'PRAGMA table_info({table_name})')
@@ -115,7 +114,7 @@ def read_table(table_path):
     header = [column[1] for column in columns]
     types = [column[2] for column in columns]
 
-    cursor.execute("SELECT * FROM my_table")
+    cursor.execute(f"SELECT * FROM {table_name}")
     contents = cursor.fetchall()
 
     cursor.close()
@@ -123,9 +122,7 @@ def read_table(table_path):
 
     return header, contents, types
 
-def insert_random_values(database_config, table_path,column_number,row_number):
-    table_name = 'my_table'
-
+def insert_random_values(database_config, table_path,column_number,row_number, table_name="my_table"):
     conn = sqlite3.connect(table_path)
     cursor = conn.cursor()
     
@@ -328,3 +325,55 @@ def delete_table(table_path):
         print(f"Permission denied to delete the file {table_path}.")
     except Exception as e:
         print(f"An error occurred while deleting the file {table_path}: {str(e)}") 
+
+
+def delete_single_table(table_path, table_name):
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    cursor.execute(f'DROP TABLE {table_name}')
+    cursor.close()
+    conn.close()
+    
+def get_database_tables(table_path):
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table';")
+    
+    contents = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+
+    return [item[0] for item in contents]
+
+
+def generate_subtable(table_path, table_name, header_name, contents, header_type):
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    column_definitions = ', '.join(f'{header_name[i]} {header_type[i]}' for i in range(len(header_name)))
+    create_table_query = f'CREATE TABLE {table_name} ({column_definitions})'
+    try:
+        cursor.execute(create_table_query)
+    except:
+        import pdb; pdb.set_trace()
+        print(create_table_query)
+        return 0
+    conn.commit()
+    conn.close()
+    
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    placeholders = ', '.join(['?'] * len(header_name))
+    for i in range(len(contents)):
+        row_tuple = contents[i]
+        cursor.execute(f"INSERT INTO {table_name} VALUES ({placeholders})", tuple(row_tuple))         
+
+    conn.commit()
+    conn.close()
+    
+    
+    
+def markdown_table(header, contents):      
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
+    return table_str

@@ -3,6 +3,6 @@
   "col_max": 8,
   "row_min": 15,
   "row_max": 15,
-  "text_int_date": [0.5, 0.5, 0],
-  "value_repeat_ratio": [0, 0.2, 0.3, 0, 0, 0, 0, 0, 0, 0]
+  "text_int_date": [0.5, 0.4, 0.1],
+  "value_repeat_ratio": [0, 0.2, 0.3, 0, 0, 0, 0, 0, 0, 0.5]
 }

@@ -7,6 +7,8 @@ import sqlite3
 from .fine_template_utils import filter_times, calculate_times
 from .value_utils import random_with_weight, random_dict_key, random_dict_value, remove_double_spaces, random_dict_key_value, extract_subsql_position, merge_dicts
 from .table_utils import execute_sql, transform_output_to_tablestr, generate_intermedium_table, transform_output_to_string
+from .table_utils import generate_subtable
+from .table_utils import delete_single_table, get_database_tables
 
 code_english = {'>': 'greater than', '<': 'less than', '=': 'equal to', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
@@ -104,7 +106,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
 
    
 # Return ( select_part, select_cols, select_instruction, select_agg, select_process)
-def select_condition(text_cols, int_cols, group_col=[]):
+def select_condition(text_cols, int_cols, group_col=[], where_col=[]):
     select_part = ""
     select_cols = []
     select_instruction = ""
@@ -155,7 +157,7 @@ def select_condition(text_cols, int_cols, group_col=[]):
     
 def where_condition(header, contents, text_cols, int_cols):
     # random where number
-    where_num = random_with_weight([1, 2], [0.7, 0.3])
+    where_num = random_with_weight([1, 2], [1, 0])
     where_string_output = ""
     where_cols = []
     where_instruction = "Please filter the rows by the column conditions, which need to be met: "
@@ -236,11 +238,11 @@ def order_condition(text_cols, int_cols, having_process=[], select_process=[]):
                 order_agg = having_process[3]
                 if order == 'asc':
                     order_instruction = order_instruction_temp.format('ascending', f"{code_english[order_agg]} {order_col}", 'smallest')
-                    order_process.append( (order_col, 0) )
+                    order_process.append( (order_col, 0, order_agg) )
                 else:
                     order_instruction = order_instruction_temp.format('descending', f"{code_english[order_agg]} {order_col}", 'largest')
-                    order_process.append( (order_col, 1) )
-                return f"order by {order_agg} ( {order_col} )", [order_col], order_instruction, order_process
+                    order_process.append( (order_col, 1, order_agg) )
+                return f"order by {order_agg} ( {order_col} ) {order} limit 1", [order_col], order_instruction, order_process
     else:
         select_col = random.choice(int_cols)
         if order == 'asc':
@@ -279,7 +281,7 @@ def having_condition(header, contents, text_cols, int_cols, group_col):
             else:
                 agg = random.choice(['count', 'max', 'min', 'sum'])
                 if agg == 'count':
-                    op = random.choice(['>', '<', '='])
+                    op = random.choice(['>', '<'])
                     is_distinct_select_col = random.choice([f'count ( {select_col} )'])
                     having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
                     having_cols.append(select_col)
@@ -318,8 +320,14 @@ def having_condition(header, contents, text_cols, int_cols, group_col):
 
     
         
-def group_condition(header, contents, text_cols, int_cols):
-    group_col = random.choice(text_cols)
+def group_condition(header, contents, text_cols, int_cols, where_col=[]):
+    _text_cols = []
+    if where_col != []:
+        _text_cols = [x for x in text_cols if x not in where_col]
+    if _text_cols != []:
+        group_col = random.choice(_text_cols)
+    else:
+        group_col = random.choice(text_cols)
     
     mode = random.choice(['having', 'order'])
     group_instruction = f"The rows are then grouped according to the value of the {group_col} in the remaining rows.\n"
@@ -387,6 +395,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
         origin_table = df.to_markdown(headers=header, tablefmt="pipe", index=False)
         instrutions = []
         intermediems = []
+
         if change_string["where"] != "":
             temp_sql = "select * from my_table " + change_string["where"]
             output = execute_sql(table_path, temp_sql)
@@ -399,18 +408,86 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             group_col = cols['group_col'][0]
             group_col_index = header.index(group_col)
             output = execute_sql(table_path, temp_sql)
-            result = [item[group_col_index] for item in output]
-            intermediem = ",".join(result)
+            cells = [item[group_col_index] for item in output]
+
+            group_intermediem_subtables = []
+            
+            temp_where_string = ""
+            if change_string["where"] != "":
+                temp_where_string = change_string["where"].strip("where") + " and"
+            
+            for i, cell in enumerate(cells):
+                sql = f"Select * from my_table where {temp_where_string} {group_col}='{cell}'"
+                subtable_contents = execute_sql(table_path, sql)
+                new_table = transform_output_to_tablestr(header, subtable_contents)
+                generate_subtable(table_path, f"new_table{i}", header, subtable_contents, types)
+                group_intermediem_subtables.append(f"new_table{i}:\n{new_table}")
+            
+
+            intermediem_subtables_str = "\n".join(group_intermediem_subtables)
             instrutions.append(change_instruction["group"])
-            intermediems.append(f"Divided rows into {len(output)} groups based on column {group_col}: "+ intermediem)
-        if change_string["having"] != "":
-            temp_sql = "select * from my_table " + change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-            output = execute_sql(table_path, temp_sql)
-            new_contents = [list(item) for item in output]
-            intermediem = transform_output_to_tablestr(header, new_contents)
+            group_intermediem_str = f"Divided rows into {len(output)} groups based on column {group_col}: \n{intermediem_subtables_str}"
+            intermediems.append(group_intermediem_str)
+            
+        # if change_string["having"] != "":
+        #     temp_sql = "select * from my_table " + change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+        #     output = execute_sql(table_path, temp_sql)
+        #     new_contents = [list(item) for item in output]
+        #     intermediem = transform_output_to_tablestr(header, new_contents)
+            
+            having_process = change_process['having'][0]
+            having_results = []
+            having_string = change_string["having"].strip("having")
+            
+            if len(having_process) == 4:
+                temp_sql = f"select {having_process[3]} ( {having_process[0]} ) from table"
+            else:
+                temp_sql = f"select * from table where {having_string}"
+            
+            for i, cell in enumerate(cells):
+                if len(having_process) == 4:
+                    temp_sql = f"select(select {having_process[3]} ( {having_process[0]} ) from new_table{i}) {having_process[1]} {having_process[2]}"
+                    result = execute_sql(table_path, temp_sql)[0][0]
+                    having_results.append(result)
+                else:
+                    _, origin_newtable_contents, _ = read_table(table_path, f"new_table{i}")
+                    temp_sql = f"select * from new_table{i} where {having_string}"
+                    new_newtable_contents = execute_sql(table_path, temp_sql)
+                    if origin_newtable_contents != new_newtable_contents:
+                        having_results.append(0)
+                    else:
+                        having_results.append(1)
             instrutions.append(change_instruction["having"])
-            intermediems.append(intermediem)
-        if change_string["select"] != "":
+            having_intermedium_subtables = [item for i, item in enumerate(group_intermediem_subtables) if having_results[i] == 1]
+            intermediems.append('\n'.join(having_intermedium_subtables))
+            
+        if change_string["group"] != "":
+            if change_process['select'][1] == '':
+                temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                output = execute_sql(table_path, temp_sql)
+                result = transform_output_to_string(output)
+                instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables, do not duplicate them.")
+                intermediems.append(result)
+            else:
+                agg = change_process['select'][1]
+                select_string = change_string['select'].replace(f'{agg} (','').replace(')','')
+                temp_sql1 = f"select {select_string} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                output1 = execute_sql(table_path, temp_sql1)
+                result1 = transform_output_to_string(output1)
+                instrutions.append(f"Select cells of '{cols['select_col'][0]}' column of these tables.")
+                intermediems.append(result1)
+                
+                temp_sql2 = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                output2 = execute_sql(table_path, temp_sql2)
+                result2 = transform_output_to_string(output2)
+                instrutions.append(f"Calculate {code_english[agg]} these cells.")
+                intermediems.append(result2)         
+            if change_string["order"] != "":
+                output = execute_sql(table_path, query)
+                result = transform_output_to_string(output)
+                instrutions.append(change_instruction["order"])
+                intermediems.append(result)
+        else:
             if change_process['select'][1] == '':
                 temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
                 output = execute_sql(table_path, temp_sql)
@@ -423,7 +500,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
                 temp_sql1 = f"select {select_string} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
                 output1 = execute_sql(table_path, temp_sql1)
                 result1 = transform_output_to_string(output1)
-                instrutions.append(f"Select cells of '{cols['select_col'][0]}' column in filtered rows.")
+                instrutions.append(f"Select cells of '{cols['select_col'][0]}' column in rows.")
                 intermediems.append(result1)
                 
                 temp_sql2 = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
@@ -431,11 +508,17 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
                 result2 = transform_output_to_string(output2)
                 instrutions.append(f"Calculate {code_english[agg]} cells.")
                 intermediems.append(result2)
-        if change_string["order"] != "":
-            output = execute_sql(table_path, query)
-            result = transform_output_to_string(output)
-            instrutions.append(change_instruction["order"])
-            intermediems.append(result)
+            
+            if change_string["order"] != "":
+                output = execute_sql(table_path, query)
+                result = transform_output_to_string(output)
+                instrutions.append(change_instruction["order"])
+                intermediems.append(result)
+                
+        table_names = get_database_tables(table_path)
+        table_names.remove('my_table')
+        for table_name in table_names:
+            delete_single_table(table_path, table_name)
 
         try:
             sql_cot = f"You need to execute {len(instrutions)} steps.\n"
@@ -462,11 +545,13 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
         sql_cot = ""
         select_instruction, group_instruction, order_instruction,having_instruction, where_instruction = "","","","",""
         select_agg = None
+        sql_cot_input = ""
+        sql_cot_output = ""
         if '<where_condition>' in query:
             where_part, where_col, where_instruction, where_process = where_condition(header, contents, text_cols, int_cols)
             query = query.replace('<where_condition>', where_part)
         if '<group_condition>' in query:
-            group_part, group_col, group_instruction, group_process = group_condition(header, contents, text_cols, int_cols)
+            group_part, group_col, group_instruction, group_process = group_condition(header, contents, text_cols, int_cols, where_col)
             query = query.replace('<group_condition>', group_part)
 
         if '<having_condition>' in query:
@@ -568,15 +653,14 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             continue
         
         if control_sql_general(header, contents, query, answer, col_dict, select_rows_list, sql_config):
-            if len(answer) == 1:
-                answer = str(answer[0][0])
-            elif len(answer) > 1:
-                answer = [str(item[0]) for item in answer]
-
-            # if sql_config["answer_cells_number"] == 1:
+            # if len(answer) == 1:
             #     answer = str(answer[0][0])
-            # elif sql_config["answer_cells_number"] > 1:
+            # elif len(answer) > 1:
             #     answer = [str(item[0]) for item in answer]
+            if sql_config["answer_cells_number"] == 1:
+                answer = str(answer[0][0])
+            elif sql_config["answer_cells_number"] > 1:
+                answer = [str(item[0]) for item in answer]
             output_dict = {}
             output_dict["sql"] = query
             output_dict["answer"] = answer
@@ -643,3 +727,4 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
     output_data = output_data[:num_queries]  
     print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:{len(output_data)}") 
     return output_data
+
