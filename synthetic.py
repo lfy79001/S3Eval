@@ -119,7 +119,7 @@ def main(args):
             insert_random_values(database_config, table_path, column_number, row_number)
             
             if args.context_length:            
-                table_length = get_table_length(table_path, args.tokenizer, args.context_length_format)
+                table_length = get_table_length(table_path, b, args.context_length_format)
                 if table_length < args.context_length-0.04*args.context_length or table_length > args.context_length+0.04*args.context_length:
                     delete_table(table_path) 
                     flag += 1   
