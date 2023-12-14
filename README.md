@@ -11,11 +11,6 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 Work in progress......
 
-# 🔥 Updates
-
-- [**2023-11-08**]: We update code and support multilingual test.
-
-- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/S3Eval) and [paper](https://arxiv.org/abs/2310.15147).
 
 # 🔧 Task
 <p align="center">
@@ -325,17 +320,6 @@ This approach has low SQL diversity
 <img src="figs/Leardboard.png">
 </p>
 
-
-# Bibtex
-
-```bash
-@article{lei2023s3eval,
-  title={S3Eval: A Synthetic, Scalable, Systematic Evaluation Suite for Large Language Models},
-  author={Lei, Fangyu and Liu, Qian and Huang, Yiming and He, Shizhu and Zhao, Jun and Liu, Kang},
-  journal={arXiv preprint arXiv:2310.15147},
-  year={2023}
-}
-```
 
 
 
