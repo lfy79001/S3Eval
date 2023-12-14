@@ -6,3 +6,8 @@ select <select_condition> from my_table <group_condition> <having_condition>
 select <select_condition> from my_table <where_condition> <group_condition> <having_condition>
 select <select_condition> from my_table <where_condition> <group_condition> <having_condition> <order_condition>
 select <select_condition> from my_table <group_condition> <having_condition> <order_condition>
+select ( [s1,s2] ) <op_and_value>
+select <select_condition> from my_table where <col_and_op> ( [s1,s2,s3,s4] )
+select <select_condition> from my_table where <col_and_op> ( [s1,s2,s3] ) <order_condition>
+select <select_condition> from my_table <where_condition> and <col_and_op> ( [s1,s2,s3,s4] )
+select ( [s1,s2,s3] ) <op> ( [s1,s2,s3] )
