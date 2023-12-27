@@ -135,6 +135,7 @@ def main(args):
             i = i + 1
     # Generate data on the exsiting database.
     else:
+        from s3eval.coarse_template_real import general_queries
         # Get all tables of this database
         table_names = []
         for file_name in os.listdir(args.db_path):
@@ -203,10 +204,10 @@ if __name__ == '__main__':
     parser.add_argument('--db_path', type=str, default='./db/db1')
     parser.add_argument('--new_db', type=int, default=1)
     parser.add_argument('--total_number', type=int, default=1000)
-    parser.add_argument('--each_table_number', type=int, default=50)
+    parser.add_argument('--each_table_number', type=int, default=5)
     parser.add_argument('--database_config', type=str, default='./config/database_config.json')
     parser.add_argument('--sql_config', type=str, default='./config/sql_config.json')
-    parser.add_argument('--template', type=str, default='./template/general.json')
+    parser.add_argument('--template', type=str, default='./template/general.txt')
     parser.add_argument('--context_length', type=int, default=0)
     parser.add_argument('--context_length_format', choices=["markdown", "flatten"], default='flatten')
     parser.add_argument('--tokenizer', type=str, default=None)

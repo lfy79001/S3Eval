@@ -11,6 +11,13 @@ The official repository which contains the code and data for our paper **S3Eval*
 
 Work in progress......
 
+# 🔥 Updates
+
+- [**2023-12-28**]: We update code and support almost any real tables, such as wikisql and wikitablequestions.
+
+- [**2023-11-08**]: We update code and support multilingual test.
+
+- [**2023-10-24**]: We released our [code](https://github.com/lfy79001/S3Eval) and [paper](https://arxiv.org/abs/2310.15147).
 
 # 🔧 Task
 <p align="center">
@@ -252,7 +259,9 @@ python systhetic.py --new_db 0 --db_path <new_db_files_path>
 # Other setting is the same as normal
 ```
 
+### WikiSQL && WTQ
 
+change `db_path` to `wikisqldb` or `wtqdb`, change `new_db` to 0
 
 
 

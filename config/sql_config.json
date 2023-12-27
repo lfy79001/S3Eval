@@ -40,11 +40,11 @@
     "min": 0,
     "max": 1
   },
-  "answer_cells_number": 1,
+  "answer_cells_number": "all",
   "multi_test": false,
   "include": [],
   "exclude": [],
-  "n_shot": 5,
+  "n_shot": 3,
   "output_config":{
     "process": false,
     "multistep": true,

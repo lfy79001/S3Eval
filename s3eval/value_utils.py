@@ -62,6 +62,13 @@ def random_date_between(start_date, end_date):
 
     return datetime.fromtimestamp(random_timestamp)
 
+def save_jsonl(save_path, data):
+    with open(save_path, 'w') as f:
+        for item in data:
+            json.dump(item, f, ensure_ascii=False)
+            f.write('\n')
+    print(f"saving to {save_path}")
+
 
 def read_jsonl(path):
     total_data = []
@@ -99,8 +106,11 @@ def save_txt(path, data):
             file.write(line + '\n')
 
 
-def random_with_weight(elements, weights):
-    return random.choices(elements, weights=weights, k=1)[0]
+def random_with_weight(elements, weights, force_id=None):
+    if force_id is None:
+        return random.choices(elements, weights=weights, k=1)[0]
+    else:
+        return elements[force_id]
 
 def random_double(strings, weights):
     result = [string for string, weight in zip(strings, weights) for _ in range(weight)]
@@ -145,3 +155,23 @@ def merge_dicts(dict1, dict2):
     return merged_dict
 
 
+
+def random_select(original_list, n):
+    if n > len(original_list):
+        new_list = original_list
+        aa = random.choices(original_list, k=n-len(new_list))
+        return new_list + aa
+    elif n == len(original_list):
+        return original_list
+    elif n < len(original_list):
+        random_indices = random.sample(range(len(original_list)), n)
+        new_list = [original_list[i] for i in sorted(random_indices)]
+        return new_list
+    elif len(original_list) == 0:
+        return []
+    
+    
+import shutil
+
+def copy_file(source_file, destination_file):
+    shutil.copy2(source_file, destination_file)

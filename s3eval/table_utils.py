@@ -34,7 +34,7 @@ def get_table_length(table_path, tokenizer_path, format):
         table_str = header_string + value_string  
     elif format == 'markdown':
         df = pd.DataFrame(contents, columns=header)
-        table_str = df.to_markdown(headers=header, tablefmt="pipe")   
+        table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)   
     table_length = len(tokenizer.tokenize(table_str)) 
     return table_length
     
@@ -195,7 +195,33 @@ class RandomString:
     def random_generate(self, row_i, column_j):
         indice = self.indices.index(column_j)
         return self.items[indice][row_i]
-             
+    
+    def output_rows(self):
+        row_tuple = []
+        column_types = self.column_types
+        column_number = len(column_types)
+        for j in range(column_number):
+            if column_types[j] == 'INT':
+                row_tuple.append(random_int())
+            elif column_types[j] == 'REAL':
+                row_tuple.append(random_float())
+            elif column_types[j] == 'DATE':
+                row_tuple.append(generate_random_date())
+            elif column_types[j] == 'TEXT':
+                row_tuple.append(random_string())
+        return row_tuple
+    
+def output_random_cells(type):
+    if type == 'INT':
+        output = random_int()
+    elif type == 'REAL':
+        output = random_float()
+    elif type == 'DATE':
+        output = generate_random_date()
+    elif type == 'TEXT':
+        output = random_string()
+    return output
+            
 
 def generate_random_column_name():
     while True:
@@ -209,7 +235,7 @@ def generate_random_column_type(weights):
     return chosen_element
 
 
-def generate_table(database_config, table_path,column_number, row_number):
+def generate_table(database_config, table_path,column_number, row_number, header_type=None):
     table_name = 'my_table'
     conn = sqlite3.connect(table_path)
     
@@ -220,15 +246,16 @@ def generate_table(database_config, table_path,column_number, row_number):
         if not has_duplicates(header_name):
             break
     
-    header_type = []
-    while True:
-        if "text_int_date_fix" in database_config.keys():
-            header_type = database_config["text_int_date_fix"]
-        else:
-            header_type = [generate_random_column_type(database_config['text_int_date']) for _ in range(column_number)]
+    if header_type == None:
+        header_type = []
+        while True:
+            if "text_int_date_fix" in database_config.keys():
+                header_type = database_config["text_int_date_fix"]
+            else:
+                header_type = [generate_random_column_type(database_config['text_int_date']) for _ in range(column_number)]
 
-        if (header_type.count('TEXT') != 0 and header_type.count('INT') != 0) or (database_config["text_int_date"].count(0)==2):
-            break   
+            if (header_type.count('TEXT') != 0 and header_type.count('INT') != 0) or (database_config["text_int_date"].count(0)==2):
+                break   
 
     column_definitions = ', '.join(f'{header_name[i]} {header_type[i]}' for i in range(len(header_name)))
     create_table_query = f'CREATE TABLE {table_name} ({column_definitions})'
@@ -236,18 +263,88 @@ def generate_table(database_config, table_path,column_number, row_number):
         cursor.execute(create_table_query)
     except:
         print(create_table_query)
+
         return 0
     conn.commit()
     conn.close()
     return table_path
+
+
+def generate_new_table(database_config, table_path,column_number, row_number, table_name='new_table', header_name=None, header_type=None):
+    conn = sqlite3.connect(table_path)
+    
+    cursor = conn.cursor()
+    if header_name == None:
+        header_name = []
+        while True:
+            header_name = [generate_random_column_name() for _ in range(column_number)]
+            if not has_duplicates(header_name):
+                break
+    
+    if header_type == None:
+        header_type = []
+        while True:
+            if "text_int_date_fix" in database_config.keys():
+                header_type = database_config["text_int_date_fix"]
+            else:
+                header_type = [generate_random_column_type(database_config['text_int_date']) for _ in range(column_number)]
+
+            if (header_type.count('TEXT') != 0 and header_type.count('INT') != 0) or (database_config["text_int_date"].count(0)==2):
+                break   
+
+    column_definitions = ', '.join(f'{header_name[i]} {header_type[i]}' for i in range(len(header_name)))
+    create_table_query = f'CREATE TABLE {table_name} ({column_definitions})'
+    try:
+        cursor.execute(create_table_query)
+    except:
+        print(create_table_query)
+        import pdb; pdb.set_trace()
+        return 0
+    conn.commit()
+    conn.close()
+    return table_path
+
+
+
+def generate_subtable(table_path, table_name, header_name, contents, header_type):
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    column_definitions = ', '.join(f"\"{header_name[i]}\" {header_type[i]}" for i in range(len(header_name)))
+    create_table_query = f'CREATE TABLE {table_name} ({column_definitions})'
+    try:
+        cursor.execute(create_table_query)
+    except:
+        import pdb; pdb.set_trace()
+        print(create_table_query)
+        return 0
+    conn.commit()
+    conn.close()
+
+    conn = sqlite3.connect(table_path)
+    cursor = conn.cursor()
+    placeholders = ', '.join(['?'] * len(header_name))
+    for i in range(len(contents)):
+        row_tuple = contents[i]
+        cursor.execute(f"INSERT INTO {table_name} VALUES ({placeholders})", tuple(row_tuple))         
+
+    conn.commit()
+    conn.close()
+    
+
 
 def execute_sql(db_path, sql):
     conn = sqlite3.connect(db_path)
 
     cursor = conn.cursor()
 
-    cursor.execute(sql)
+    try:
+        cursor.execute(sql)
+    except:
+        import pdb; pdb.set_trace()
+
     contents = cursor.fetchall()
+    
+    conn.commit()
 
     cursor.close()
     conn.close()
@@ -263,12 +360,14 @@ def find_element_position(contents, new_answer):
 
 
 def transform_output_to_tablestr(header, contents, type='markdown'):
+    if contents == []:
+        return "None Table"
     if contents == [[]]:
         return "None Table"
     table_str = ""
     if type == "markdown":
         df = pd.DataFrame(contents, columns=header)
-        table_str = df.to_markdown(headers=header, tablefmt="pipe")
+        table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
     elif type == "flatten":
         header_string = f'The table have {len(header)} columns: '
         header_string += " | ".join(header) + '\n'
@@ -286,12 +385,17 @@ def transform_output_to_tablestr(header, contents, type='markdown'):
     return output_str
 
 def transform_output_to_string(data):
-    values = [str(item[0]) for item in data]
-
-    result = ','.join(values)
-
-    if len(data) == 1:
-        result = values[0]
+    if len(data) == 0:
+        result = ""
+    elif len(data) == 1:
+        result = data[0][0]
+    else:
+        if len(data[0]) == 1:
+            values = [str(item[0]) for item in data]
+            result = ', '.join(values)
+        elif len(data[0]) > 1:
+            values = [item for item in data]
+            result = ', '.join([f'({x}, {y})' for x, y in values])
     return result
 
 
@@ -325,6 +429,13 @@ def delete_table(table_path):
         print(f"Permission denied to delete the file {table_path}.")
     except Exception as e:
         print(f"An error occurred while deleting the file {table_path}: {str(e)}") 
+        
+        
+        
+def markdown_table(header, contents):      
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
+    return table_str
 
 
 def delete_single_table(table_path, table_name):
@@ -345,35 +456,3 @@ def get_database_tables(table_path):
     conn.close()
 
     return [item[0] for item in contents]
-
-
-def generate_subtable(table_path, table_name, header_name, contents, header_type):
-    conn = sqlite3.connect(table_path)
-    cursor = conn.cursor()
-    column_definitions = ', '.join(f'{header_name[i]} {header_type[i]}' for i in range(len(header_name)))
-    create_table_query = f'CREATE TABLE {table_name} ({column_definitions})'
-    try:
-        cursor.execute(create_table_query)
-    except:
-        import pdb; pdb.set_trace()
-        print(create_table_query)
-        return 0
-    conn.commit()
-    conn.close()
-    
-    conn = sqlite3.connect(table_path)
-    cursor = conn.cursor()
-    placeholders = ', '.join(['?'] * len(header_name))
-    for i in range(len(contents)):
-        row_tuple = contents[i]
-        cursor.execute(f"INSERT INTO {table_name} VALUES ({placeholders})", tuple(row_tuple))         
-
-    conn.commit()
-    conn.close()
-    
-    
-    
-def markdown_table(header, contents):      
-    df = pd.DataFrame(contents, columns=header)
-    table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
-    return table_str
