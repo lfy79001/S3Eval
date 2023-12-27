@@ -13,7 +13,7 @@ Work in progress......
 
 # 🔥 Updates
 
-- [**2023-12-28**]: We update code and support almost any real tables, such as wikisql and wikitablequestions.
+- [**2023-12-28**]: We update code and support almost any real tables, such as wikisql and wikitablequestions. The robustness of the code has been greatly improved. You can use your own table to generate any number of SQL, multi-step instructions, and COT data.
 
 - [**2023-11-08**]: We update code and support multilingual test.
 
