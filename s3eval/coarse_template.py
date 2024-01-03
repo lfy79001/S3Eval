@@ -28,6 +28,11 @@ def is_integer(s):
         return True
     else:
         return False
+    
+def generate_random_number(n):
+    lower_bound = max(1, n - 5)  # 下界为n-5或1，取较大值确保生成的数字大于0
+    upper_bound = n + 5  # 上界为n+5
+    return random.randint(lower_bound, upper_bound)
 
 
 def control_sql_general(header, contents, sql, answer, col_dict, select_rows_list, sql_config):
@@ -47,12 +52,15 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
     else:
         if answer == "None" or answer == None or answer == "NULL" or answer == [] or answer == 'none':
             return False
+
+
     if isinstance(answer, list):
         if '1' in answer or '0' in answer:
             return False  
     elif is_integer(answer):
         if int(answer) == len(contents) or int(answer) > len(contents) - 3:
             return False
+
     
     # Control the length of the answer.
     if len(answer) == 0 or len(answer) == len(contents):
@@ -157,10 +165,10 @@ def select_condition(text_cols, int_cols, group_col=[], where_col=[], having_pro
     AGG_RATIO = [0.8, 0.2]           # no, yes
     if template_flag == 'd':
         CAL_RATIO = [0, 1]
-        AGG_RATIO = [40, 0]
+        AGG_RATIO = [40, 5]
     elif template_flag == 't':
         CAL_RATIO = [0, 1]
-        AGG_RATIO = [40, 0]
+        AGG_RATIO = [40, 15]
         
     
     if random_with_weight([True, False], CAL_RATIO): # calculate
@@ -247,7 +255,7 @@ def where_condition(header, contents, text_cols, int_cols):
             
             if select_col in text_cols:
                 text_ops = ['=', 'like', 'in']
-                op = random_with_weight(text_ops, [1, 0, 0])
+                op = random_with_weight(text_ops, [0.6, 0.05, 0.1])
                 if op == '=':
                     value = f"'{random.choice(contents)[header.index(select_col)]}'"
                     op_value = f"{op} {value}"
@@ -715,15 +723,27 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             instruction = where_instruction + group_instruction  + having_instruction + select_instruction + order_instruction
         return query, output_cols, select_rows_list, instruction, select_agg, sql_cot, sql_cot_input, sql_cot_output
     
-    def generate_op_and_value(select_col, select_agg):
-        if select_col in text_cols:
-            op = '='
-            value = f"\"{random.choice(contents)[header.index(select_col)]}\""
-        elif select_col in int_cols:
-            op = random.choice(['>', '<', '='])
-            value = f"{random.choice(contents)[header.index(select_col)]}"
-            if select_agg == 'count':
-                value = random.choice([1, 2, 3, 4, 5])
+    def generate_op_and_value(select_col, sub_answer):
+        sub_answer = sub_answer[0][0]
+        if isinstance(sub_answer, int):
+            op = random_with_weight(["=", ">", "<"], [1, 1, 1])
+            if op == "=":
+                if random_with_weight([True, False], [0.4, 0.6]):
+                    value = sub_answer
+                else:
+                    value = generate_random_number(sub_answer)
+            else:
+                value = generate_random_number(sub_answer)
+        elif isinstance(sub_answer, str):
+            op = random_with_weight(["=", "in"], [0.5, 0.6])
+            if op == "=":
+                if random_with_weight([True, False], [0.4, 0.6]):
+                    value = f"'{sub_answer}'"
+                else:
+                    value = f"'{random.choice(contents)[header.index(select_col)]}'"
+            elif op == 'in':
+                value = [row[header.index(select_col)] for row in random.choices(contents, k=3)]
+                value = f"( '{value[0]}' , '{value[1]}' , '{value[2]}' )"
         return f'{op} {value}'
     def generate_col_and_value(select_col, sub_answer):
         if select_col in text_cols:
@@ -751,7 +771,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
                 subsql, subsql_cols_dict, subsql_rows_list, subsql_instruction, subsql_select_agg, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='d')
                 sub_answer = execute_sql(table_path, subsql)
                 select_col = subsql_cols_dict['select_col'][0]
-                if len(sub_answer) == len(contents):
+                if len(sub_answer) == len(contents) or len(sub_answer)==0 or sub_answer[0][0] is None:
                     continue
                 if '<op_and_value>' in query:
                     if subsql_select_agg == '' and len(sub_answer) == 1:
@@ -773,8 +793,9 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             sql_cot_output += sql_cot1_output
             
             if '<op_and_value>' in query:
-                query = query.replace('<op_and_value>', generate_op_and_value(select_col, subsql_select_agg))
-                temp_cot_input = f"Then, if the process of the previous query matches {generate_op_and_value(select_col, subsql_select_agg)}. True or False."
+                op_and_value_str = generate_op_and_value(select_col, sub_answer)
+                query = query.replace('<op_and_value>', op_and_value_str)
+                temp_cot_input = f"Then, if the process of the previous query matches {op_and_value_str}. True or False."
                 answer = execute_sql(table_path, query)
                 temp_cot_output = f"Answer is {str(answer[0][0])}"
                 sql_cot_input.append(temp_cot_input)
@@ -806,14 +827,34 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             while True:
                 subsql1, subsql_cols_dict1, select_rows_list1, instruction1, select_agg1, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='t')
                 subsql2, subsql_cols_dict2, select_rows_list2, instruction2, select_agg2, sql_cot2, sql_cot2_input, sql_cot2_output = single_template_generate(selected_template, template='t')
-                if subsql_cols_dict1['select_col'] == subsql_cols_dict2['select_col']:
+                if subsql1 == subsql2:
+                    continue
+                flag = 0
+                if subsql_cols_dict1['select_col'] == subsql_cols_dict2['select_col'] and set([select_agg1,select_agg2]) == set(['']):
+                    flag = 1
+                if set([select_agg1,select_agg2]) in [set(['count']), set(['max']), set(['min']), set(['max', 'min'])]:
+                    flag = 1
+                sub_answer1 = execute_sql(table_path, subsql1)
+                sub_answer2 = execute_sql(table_path, subsql2)
+                if len(sub_answer1) == 0 or sub_answer1[0][0] is None or len(sub_answer2) == 0 or sub_answer2[0][0] is None: continue
+                
+                if flag == 1:
                     break
+                    
             query = query.replace(to_replace_str, subsql1, 1)
             query = query.replace(to_replace_str, subsql2, 1)
             op = ""
             if '<op>' in query:
-                op = random_with_weight(['>', '<', '=', '+', '-'], [0.1,0.1,0.1,0.35,0.35])
-                query = query.replace('<op>', op)
+                if isinstance(sub_answer1[0][0], int):
+                    op = random_with_weight(['>', '<', '+', '-'], [0.1,0.1,0.35,0.35])
+                    query = query.replace('<op>', op)
+                else:
+                    if "limit" in subsql1:
+                        op = "="
+                        query = query.replace('<op>', op)
+                    else:
+                        op = random_with_weight(['union', 'intersect'], [1, 1])
+                        query = f"{subsql1} {op} {subsql2}"
             col_dict = merge_dicts(subsql_cols_dict1, subsql_cols_dict2)
             select_rows_list = select_rows_list1 + select_rows_list2
             instruction = instruction1 + instruction2
@@ -833,7 +874,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             output = execute_sql(table_path, query)
 
 
-            sql_cot_output.append(f"The answer is {str(output[0][0])}")
+            sql_cot_output.append(f"The answer is {str(output)}")
             
 
             

@@ -1,4 +1,4 @@
-from teval.value_utils import read_txt, read_jsonl, save_txt
+from s3eval.value_utils import read_txt, read_jsonl, save_txt
 
 
 import sys
