@@ -385,6 +385,7 @@ def transform_output_to_tablestr(header, contents, type='markdown'):
     return output_str
 
 def transform_output_to_string(data):
+
     if len(data) == 0:
         result = ""
     elif len(data) == 1:
@@ -394,8 +395,7 @@ def transform_output_to_string(data):
             values = [str(item[0]) for item in data]
             result = ', '.join(values)
         elif len(data[0]) > 1:
-            values = [item for item in data]
-            result = ', '.join([f'({x}, {y})' for x, y in values])
+            result = ", ".join([str(item) for item in data])
     return result
 
 
@@ -456,3 +456,119 @@ def get_database_tables(table_path):
     conn.close()
 
     return [item[0] for item in contents]
+
+
+def get_output_table(table_path, sql):
+    conn = sqlite3.connect(table_path)
+    df = pd.read_sql(sql, conn)
+    output = df.to_markdown(tablefmt="pipe", index=False)
+    conn.close()
+    return output
+
+
+def markdown_table(header, contents):      
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
+    return table_str
+
+def markdown_index_table(header, contents):
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_markdown(headers=header, tablefmt="pipe")
+    return table_str
+
+def dfloader_format_table(header, contents):
+    data = {col: data_col for col, data_col in zip(header, zip(*contents))}
+
+    df = pd.DataFrame(data)
+
+    # 构建DataFrame字符串表示
+    df_str = "pd.DataFrame({\n"
+    for col in df.columns:
+        df_str += f"    '{col}': {df[col].tolist()},\n"
+    df_str += "},\n"
+    df_str += f"index={df.index.tolist()})"
+    return df_str
+
+def json_table(header, contents):
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_json(orient='index')
+    return table_str
+    
+def matrix_table(header, contents):
+    table_str = ""
+    header = [""] + header
+    output_list = []
+    table_str += "[\n"
+    table_str += "  " + str(header) + "\n"
+    for i, row in enumerate(contents):
+        table_str += "  " + str([i] + row) + "\n"
+    table_str += "]"
+    return table_str
+
+def html_table(header, contents):
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_html()
+    return table_str
+
+def csv_table(header, contents):
+    df = pd.DataFrame(contents, columns=header)
+    table_str = df.to_csv(index=True)
+    return table_str
+
+def tab_table(header, contents):
+    df = pd.DataFrame(contents, columns=header)
+    table_str = str(df)
+    return table_str
+    
+def flatten_table(header, contents):
+    header_string = f'The table have {len(header)} columns: '
+    header_string += " | ".join(header) + '\n'
+    value_string = ""
+    for i, row in enumerate(contents):
+        value_string += "row " + str(i+1) + " : "
+        row_cell_values = [str(cell_value).lower() if isinstance(cell_value, str) else str(cell_value) if isinstance(cell_value, int) else '' for cell_value in row]
+        row_value_string = ""
+        for j, value in enumerate(row_cell_values):
+            row_value_string += f"{header[j]} is {value}. "
+        value_string += row_value_string + '\n'
+    output_string = header_string + value_string
+
+    return output_string
+
+def tapex_table(header, contents):
+    header_string = f"header: "
+    header_string += " | ".join(header) + '\n'
+    value_string = ""
+    for i, row in enumerate(contents):
+        value_string += "row " + str(i+1) + " : "
+        row_cell_values = [str(cell_value).lower() if isinstance(cell_value, str) else str(cell_value) if isinstance(cell_value, int) else '' for cell_value in row]
+        row_value_string = " | ".join(row_cell_values) + '\n'
+        value_string += row_value_string
+    output_string = header_string + value_string
+    return output_string
+    
+
+
+
+
+def get_table_str(header, contents, format):
+    if format == 'markdown':
+        return markdown_table(header, contents)
+    elif format == 'markdown_index':
+        return markdown_index_table(header, contents)
+    elif format == 'dfloader':
+        return dfloader_format_table(header, contents)
+    elif format == 'json':
+        return json_table(header, contents)
+    elif format == 'matrix':
+        return matrix_table(header, contents)
+    elif format == 'html':
+        return html_table(header, contents)
+    elif format == 'csv':
+        return csv_table(header, contents)
+    elif format == 'tab':
+        return tab_table(header, contents)
+    elif format == 'flatten':
+        return flatten_table(header, contents)
+    elif format == 'tapex':
+        return tapex_table(header, contents)

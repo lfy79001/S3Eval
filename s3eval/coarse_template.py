@@ -9,9 +9,25 @@ from .value_utils import random_with_weight, random_dict_key, random_dict_value,
 from .table_utils import execute_sql, transform_output_to_tablestr, generate_intermedium_table, transform_output_to_string
 from .table_utils import generate_subtable
 from .table_utils import delete_single_table, get_database_tables
+from .value_utils import random_select
+from .table_utils import get_output_table
+from .table_utils import get_table_str
 
 code_english = {'>': 'greater than', '<': 'less than', '=': 'equal to', 'count':'the number of', 'max': 'the maximum value of', 'min': 'the minimum value of', 'sum': 'the sum of the values of', 'avg':'the average of', '+':'sum of', '-':'difference between', '*':'product of', '/':'quotient of'}
 
+import re
+def is_integer(s):
+    s = s.strip()  # 去除首尾空格
+    if len(s) == 0:  # 字符串为空
+        return False
+
+    if s[0] == '+' or s[0] == '-':  # 检查正负号
+        s = s[1:]
+
+    if re.match(r'^\d+$', s):  # 使用正则表达式检查是否为纯数字
+        return True
+    else:
+        return False
 
 
 def control_sql_general(header, contents, sql, answer, col_dict, select_rows_list, sql_config):
@@ -21,12 +37,35 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
     row_num = len(contents)
     col_num = len(contents[0])
     
-    # Control the length of the answer.
-    if isinstance(sql_config['answer_cells_number'], int):
-        if len(answer) != sql_config['answer_cells_number']:
+    if len(answer) == 1:
+        answer = str(answer[0][0])
+    elif len(answer) > 1:
+        answer = [str(item[0]) for item in answer]
+    if sql.count("select") == 1:
+        if answer == "None" or answer == "0" or answer == None or answer == "NULL" or answer == [] or answer == 'none':
             return False
     else:
-        if len(answer) == 0:
+        if answer == "None" or answer == None or answer == "NULL" or answer == [] or answer == 'none':
+            return False
+    if isinstance(answer, list):
+        if '1' in answer or '0' in answer:
+            return False  
+    elif is_integer(answer):
+        if int(answer) == len(contents) or int(answer) > len(contents) - 3:
+            return False
+    
+    # Control the length of the answer.
+    if len(answer) == 0 or len(answer) == len(contents):
+        return False
+    
+    
+    if sql_config['answer_cells_number']['is_available']:
+        gold_cells_number = []
+        if len(sql_config['answer_cells_number']['value']) != 0:
+            gold_cells_number = sql_config['answer_cells_number']['value']
+        else:
+            gold_cells_number = list(range(sql_config['answer_cells_number']['min'], sql_config['answer_cells_number']['max']+1))
+        if len(answer) not in gold_cells_number:
             return False
 
     # keyword
@@ -106,7 +145,7 @@ def control_sql_general(header, contents, sql, answer, col_dict, select_rows_lis
 
    
 # Return ( select_part, select_cols, select_instruction, select_agg, select_process)
-def select_condition(text_cols, int_cols, group_col=[], where_col=[]):
+def select_condition(text_cols, int_cols, group_col=[], where_col=[], having_process=[], template_flag='s'):
     select_part = ""
     select_cols = []
     select_instruction = ""
@@ -114,32 +153,65 @@ def select_condition(text_cols, int_cols, group_col=[], where_col=[]):
     select_process = ('','')
     
     # Set "+, -, *, /" as the value for select_col.
-    if random_with_weight([True, False], [0, 1]):
-        select_col1, select_col2 = random.choices(int_cols, k=2)
+    CAL_RATIO = [0.05, 0.95] # yes, no
+    AGG_RATIO = [0.8, 0.2]           # no, yes
+    if template_flag == 'd':
+        CAL_RATIO = [0, 1]
+        AGG_RATIO = [40, 0]
+    elif template_flag == 't':
+        CAL_RATIO = [0, 1]
+        AGG_RATIO = [40, 0]
+        
+    
+    if random_with_weight([True, False], CAL_RATIO): # calculate
+        select_col1, select_col2 = random_select(int_cols, 2)
         cal_ops = ['+', '-', '*', '/']
-        cal_op = random_with_weight(cal_ops, [0.5,0.3,0.1,0.1]) 
-        if random_with_weight([True, False], [0.8, 0.2]):
+        cal_op = random_with_weight(cal_ops, [0.5,0.5,0,0]) 
+        
+        force_id = None
+        if random_with_weight([True, False], [1, 0], force_id):
             select_part = f"{select_col1} {cal_op} {select_col2}"
             select_cols = [select_col1, select_col2]
             select_instruction = f"Select calculate {code_english[cal_op]} the values in columns {select_col1} and {select_col2} in filtered rows."
+            select_process = (select_cols, "", cal_op)
         else:
             agg = random.choice(['min', 'max', 'count', 'sum'])
             select_part = f"{agg} ( {select_col1} {cal_op} {select_col2} )"
             select_cols = [select_col1, select_col2]
             select_instruction = f"Select calculate {code_english[agg]} {code_english[cal_op]} the values in columns {select_col1} and {select_col2} in filtered rows."
             select_agg = agg
+            select_process = (select_cols, select_agg)
     # Common select_col
     else:    
-        select_col = random.choice(text_cols + int_cols)
+        remain_col = list(set(text_cols + int_cols).difference(set(where_col)))
         # if no agg, directly return this row
-        if random_with_weight([True, False], [0.8, 0.2]):
+        force_id = None
+        if random_with_weight([True, False], AGG_RATIO, force_id): # no agg
+            if template_flag != 's': 
+                select_cols = [random.choice(remain_col)]
+                select_part = select_cols[0]
+                select_instruction = f"Select values of {select_cols} column in filtered rows."
+            else:
+                select_num_temp = random_with_weight(list(range(1, len(remain_col)+1)), list(range(len(remain_col)+1, 1, -1)))
+                select_cols = random_select(remain_col,select_num_temp)                    
+                select_part = ",".join(select_cols)  
+                select_instruction = f"Select values of {select_cols} column in filtered rows."          
+                
             if group_col != []:
-                select_col = group_col[0]
-            select_part = select_col
-            select_cols = [select_col]
-            select_instruction = f"Select values of {select_col} column in filtered rows."
-            select_process = (select_col, "")
-        else:
+                select_cols = group_col
+                if len(having_process[0]) < 4 or template_flag != 's':
+                    force_id = 0
+                if random_with_weight([True, False], [0.5, 0.5], force_id): # common:
+                    select_cols = group_col
+                    select_part = group_col[0]
+                    select_instruction = f"Select values of {select_cols} column in filtered rows."
+                else:# _, count
+                    select_cols = group_col + [having_process[0][0]]
+                    select_part = f"{group_col[0]}, {having_process[0][3]} ( {having_process[0][0]} )"
+                    select_instruction = f"Select values of {group_col[0]} column and {code_english[having_process[0][3]]} {having_process[0][0]} in filtered rows."
+            select_process = (select_cols, "")
+        else: # agg
+            select_col = random.choice(remain_col)
             if select_col in int_cols:
                 agg = random.choice(['min', 'max', 'count', 'sum'])
                 select_part = f"{agg} ( {select_col} )"
@@ -157,67 +229,82 @@ def select_condition(text_cols, int_cols, group_col=[], where_col=[]):
     
 def where_condition(header, contents, text_cols, int_cols):
     # random where number
-    where_num = random_with_weight([1, 2], [1, 0])
     where_string_output = ""
     where_cols = []
     where_instruction = "Please filter the rows by the column conditions, which need to be met: "
     where_string = []
     where_process = []
     total_cols = text_cols + int_cols
-    for i in range(where_num):
-        select_col = random.choice(total_cols)
-        total_cols.remove(select_col)
-        
-        if select_col in text_cols:
-            text_ops = ['=', 'like', 'in']
-            op = random_with_weight(text_ops, [0.6, 0.2, 0.2])
-            if op == '=':
-                value = f"'{random.choice(contents)[header.index(select_col)]}'"
+    
+    force_id = None
+    if len(int_cols) < 2:
+        force_id = 0
+    if random_with_weight([True, False], [0.7, 0.3], force_id): # if where col op value, or col op col
+        where_num = random_with_weight([1, 2], [0.8, 0.2])
+        for i in range(where_num):
+            select_col = random.choice(total_cols)
+            total_cols.remove(select_col)
+            
+            if select_col in text_cols:
+                text_ops = ['=', 'like', 'in']
+                op = random_with_weight(text_ops, [1, 0, 0])
+                if op == '=':
+                    value = f"'{random.choice(contents)[header.index(select_col)]}'"
+                    op_value = f"{op} {value}"
+                    # condition
+                    where_process.append( (select_col, op, value)  )
+                    # to NL
+                    where_string.append(f"The value of column {select_col} is {value}.")
+                elif op == 'like':
+                    value = random.choice(contents)[header.index(select_col)]
+                    like_value = value[:3]
+                    op_value = f"{op} '{like_value}%'"
+                    # condition
+                    where_process.append( (select_col, op, like_value)  )
+                    # to NL
+                    where_string.append(f"The value of column {select_col} is required to fuzzy match '{like_value}%'.")
+                elif op == 'in':
+                    in_number = random_with_weight([2,3],[0.6,0.4])
+                    value = [row[header.index(select_col)] for row in random.choices(contents, k=3)]
+                    if in_number == 2:
+                        in_value = f"( '{value[0]}' , '{value[1]}' )"
+                        # condition
+                        where_process.append( (select_col, op, [value[0], value[1]])  )
+                        # to NL
+                        where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}'.")
+                    elif in_number == 3:
+                        in_value = f"( '{value[0]}' , '{value[1]}' , '{value[2]}' )"
+                        # condition
+                        where_process.append( (select_col, op, [value[0], value[1], value[2]])  )
+                        # to NL
+                        where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}' or '{value[2]}'.")
+                    op_value = f"{op} {in_value}"
+            elif select_col in int_cols:
+                op = random.choice(['>', '<', '='])
+                value = f"{random.choice(contents)[header.index(select_col)]}"
                 op_value = f"{op} {value}"
                 # condition
                 where_process.append( (select_col, op, value)  )
                 # to NL
-                where_string.append(f"The value of column {select_col} is {value}.")
-            elif op == 'like':
-                value = random.choice(contents)[header.index(select_col)]
-                like_value = value[:3]
-                op_value = f"{op} '{like_value}%'"
-                # condition
-                where_process.append( (select_col, op, like_value)  )
-                # to NL
-                where_string.append(f"The value of column {select_col} is required to fuzzy match '{like_value}%'.")
-            elif op == 'in':
-                in_number = random_with_weight([2,3],[0.6,0.4])
-                value = [row[header.index(select_col)] for row in random.choices(contents, k=3)]
-                if in_number == 2:
-                    in_value = f"( '{value[0]}' , '{value[1]}' )"
-                    # condition
-                    where_process.append( (select_col, op, [value[0], value[1]])  )
-                    # to NL
-                    where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}'.")
-                elif in_number == 3:
-                    in_value = f"( '{value[0]}' , '{value[1]}' , '{value[2]}' )"
-                    # condition
-                    where_process.append( (select_col, op, [value[0], value[1], value[2]])  )
-                    # to NL
-                    where_string.append(f"The value of column {select_col} is either '{value[0]}' or '{value[1]}' or '{value[2]}'.")
-                op_value = f"{op} {in_value}"
-        elif select_col in int_cols:
-            op = random.choice(['>', '<', '='])
-            value = f"{random.choice(contents)[header.index(select_col)]}"
-            op_value = f"{op} {value}"
-            # condition
-            where_process.append( (select_col, op, value)  )
-            # to NL
-            where_string.append(f"The value of column {select_col} needs to be {code_english[op]} {value}.")
-            
-        if i == 0:
-            where_string_output += f"where {select_col} {op_value}"
-        elif i == 1:
-            where_string_output += f" and {select_col} {op_value}"
-        where_cols.append(select_col)
-    where_instruction += " ".join(where_string)
-    where_instruction += "\n"
+                where_string.append(f"The value of column {select_col} needs to be {code_english[op]} {value}.")
+                
+            if i == 0:
+                where_string_output += f"where {select_col} {op_value}"
+            elif i == 1:
+                where_string_output += f" and {select_col} {op_value}"
+            where_cols.append(select_col)
+        where_instruction += " ".join(where_string)
+        where_instruction += "\n"
+    else:
+        select_int_cols = random_select(int_cols, 2)
+        select_col1 = select_int_cols[0]
+        select_col2 = select_int_cols[1]
+        op = random.choice(['>', '<'])
+        where_string_output = f"where {select_col1} {op} {select_col2}"
+        where_cols = [select_col1, select_col2]
+        where_instruction += f"The value of column {select_col1} needs to be {code_english[op]} the value of column {select_col2}.\n"
+        where_process.append( (select_col1, op, select_col2)  )
+        
     return where_string_output, where_cols, where_instruction, where_process
 
 def order_condition(text_cols, int_cols, having_process=[], select_process=[]):
@@ -255,6 +342,7 @@ def order_condition(text_cols, int_cols, having_process=[], select_process=[]):
     
     
 def having_condition(header, contents, text_cols, int_cols, group_col):
+    
     having_instruction = "Then filter some groups by the following condition:"
     
     condition_num = random_with_weight([1, 2], [1, 0])
@@ -263,24 +351,17 @@ def having_condition(header, contents, text_cols, int_cols, group_col):
     having_cols = []
     having_process = []
     
-    for i in range(condition_num):
-        # if aggregation
-        if random_with_weight([True, False], [0.7, 0.3]):
-            select_col = random.choice(text_cols + int_cols)
-            num1 = random.choice([1,2,3,4,5,6])
-            if select_col in text_cols:
-                op = random.choice(['>', '<'])
-                is_distinct_select_col = random.choice([f'count ( {select_col} )'])
-                having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
-                having_cols.append(select_col)
-                if 'distinct' in is_distinct_select_col:
-                    having_conditions_instructions.append(f"the number of non-repeating column {select_col} is {code_english[op]} {str(num1)}.")
-                else:
-                    having_conditions_instructions.append(f"the number of column {select_col} is {code_english[op]} {str(num1)}.")
-                having_process.append( (select_col, op, num1, "count")  )
-            else:
-                agg = random.choice(['count', 'max', 'min', 'sum'])
-                if agg == 'count':
+    
+    force_id = None
+    if len(int_cols) < 2:
+        force_id = 0
+    if random_with_weight([True, False], [0.9, 0.1], force_id): # if where col op value, or col op col
+        for i in range(condition_num):
+            # if aggregation
+            if random_with_weight([True, False], [0.7, 0.3]):
+                select_col = random.choice(text_cols + int_cols)
+                num1 = random.choice([1,2,3,4,5,6])
+                if select_col in text_cols:
                     op = random.choice(['>', '<'])
                     is_distinct_select_col = random.choice([f'count ( {select_col} )'])
                     having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
@@ -289,32 +370,54 @@ def having_condition(header, contents, text_cols, int_cols, group_col):
                         having_conditions_instructions.append(f"the number of non-repeating column {select_col} is {code_english[op]} {str(num1)}.")
                     else:
                         having_conditions_instructions.append(f"the number of column {select_col} is {code_english[op]} {str(num1)}.")
-                    having_process.append( (select_col, op, num1, agg)  )
+                    having_process.append( (select_col, op, num1, "count")  )
                 else:
-                    op = random.choice(['>', '<'])
-                    agg_select_col = f"{agg} ( {select_col} )"
-                    value = f"{random.choice(contents)[header.index(select_col)]}"
-                    having_conditions.append(f"{agg_select_col} {op} {str(value)}")
-                    having_cols.append(select_col)
-                    having_conditions_instructions.append(f"{code_english[agg]} column {select_col} is {code_english[op]} {str(value)}.")
-                    having_process.append( (select_col, op, int(value), agg)  )
-        # no aggregation
-        else:
-            select_col = random.choice(int_cols)
-            op = random.choice(['>', '<'])
-            value = f"{random.choice(contents)[header.index(select_col)]}"
-            having_conditions.append(f"{select_col} {op} {str(value)}")
-            having_cols.append(select_col)
-            having_conditions_instructions.append(f"the column {select_col} is {code_english[op]} {str(value)}.")
-            having_process.append( (select_col, op, value)  )
-    having_conditions_output = ""
-    if len(having_conditions) == 1:
-        having_conditions_output = f"having {having_conditions[0]}"
-    elif len(having_conditions) == 2:
-        having_conditions_output = f"having {having_conditions[0]} and {having_conditions[1]}"
+                    agg = random.choice(['count', 'max', 'min', 'sum'])
+                    if agg == 'count':
+                        op = random.choice(['>', '<'])
+                        is_distinct_select_col = random.choice([f'count ( {select_col} )'])
+                        having_conditions.append(f"{is_distinct_select_col} {op} {str(num1)}")
+                        having_cols.append(select_col)
+                        if 'distinct' in is_distinct_select_col:
+                            having_conditions_instructions.append(f"the number of non-repeating column {select_col} is {code_english[op]} {str(num1)}.")
+                        else:
+                            having_conditions_instructions.append(f"the number of column {select_col} is {code_english[op]} {str(num1)}.")
+                        having_process.append( (select_col, op, num1, agg)  )
+                    else:
+                        op = random.choice(['>', '<'])
+                        agg_select_col = f"{agg} ( {select_col} )"
+                        value = f"{random.choice(contents)[header.index(select_col)]}"
+                        having_conditions.append(f"{agg_select_col} {op} {str(value)}")
+                        having_cols.append(select_col)
+                        having_conditions_instructions.append(f"{code_english[agg]} column {select_col} is {code_english[op]} {str(value)}.")
+                        having_process.append( (select_col, op, int(value), agg)  )
+            # no aggregation
+            else:
+                select_col = random.choice(int_cols)
+                op = random.choice(['>', '<'])
+                value = f"{random.choice(contents)[header.index(select_col)]}"
+                having_conditions.append(f"{select_col} {op} {str(value)}")
+                having_cols.append(select_col)
+                having_conditions_instructions.append(f"the column {select_col} is {code_english[op]} {str(value)}.")
+                having_process.append( (select_col, op, value)  )
+        having_conditions_output = ""
+        if len(having_conditions) == 1:
+            having_conditions_output = f"having {having_conditions[0]}"
+        elif len(having_conditions) == 2:
+            having_conditions_output = f"having {having_conditions[0]} and {having_conditions[1]}"
 
-    having_instruction += " ".join(having_conditions_instructions)
-    having_instruction += "\n"
+        having_instruction += " ".join(having_conditions_instructions)
+        having_instruction += "\n"
+    else:
+        select_int_cols = random_select(int_cols, 2)
+        select_col1 = select_int_cols[0]
+        select_col2 = select_int_cols[1]
+        op = random.choice(['>', '<'])
+        having_conditions_output = f"having {select_col1} {op} {select_col2}"
+        having_cols = [select_col1, select_col2]
+        having_instruction += f"The value of column {select_col1} needs to be {code_english[op]} the value of column {select_col2}.\n"
+        having_process.append( (select_col1, op, select_col2)  )
+        
     return having_conditions_output, having_cols, having_instruction, having_process
     
 
@@ -414,7 +517,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             
             temp_where_string = ""
             if change_string["where"] != "":
-                temp_where_string = change_string["where"].strip("where") + " and"
+                temp_where_string = change_string["where"].replace("where","") + " and"
             
             for i, cell in enumerate(cells):
                 sql = f"Select * from my_table where {temp_where_string} {group_col}='{cell}'"
@@ -437,7 +540,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             
             having_process = change_process['having'][0]
             having_results = []
-            having_string = change_string["having"].strip("having")
+            having_string = change_string["having"].replace("having","")
             
             if len(having_process) == 4:
                 temp_sql = f"select {having_process[3]} ( {having_process[0]} ) from table"
@@ -463,55 +566,72 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             
         if change_string["group"] != "":
             if change_process['select'][1] == '':
-                temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output = execute_sql(table_path, temp_sql)
-                result = transform_output_to_string(output)
-                instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables, do not duplicate them.")
-                intermediems.append(result)
+                if len(change_process["select"][0]) == 1:
+                    temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                    result = get_output_table(table_path, temp_sql)
+                    instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables.")
+                    intermediems.append(result)
+                elif len(change_process["select"][0]) > 1:
+                    if len(change_process["select"]) == 3: # have calculation
+                        temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                        result = get_output_table(table_path, temp_sql)
+                        instrutions.append(change_instruction['select'])
+                        intermediems.append(result) 
+                    else:
+                        temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                        result = get_output_table(table_path, temp_sql)
+                        instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables.")
+                        intermediems.append(result) 
             else:
                 agg = change_process['select'][1]
                 select_string = change_string['select'].replace(f'{agg} (','').replace(')','')
                 temp_sql1 = f"select {select_string} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output1 = execute_sql(table_path, temp_sql1)
-                result1 = transform_output_to_string(output1)
+                result1 = get_output_table(table_path, temp_sql1)
                 instrutions.append(f"Select cells of '{cols['select_col'][0]}' column of these tables.")
                 intermediems.append(result1)
                 
                 temp_sql2 = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output2 = execute_sql(table_path, temp_sql2)
-                result2 = transform_output_to_string(output2)
+                result2 = get_output_table(table_path, temp_sql2)
                 instrutions.append(f"Calculate {code_english[agg]} these cells.")
                 intermediems.append(result2)         
             if change_string["order"] != "":
-                output = execute_sql(table_path, query)
-                result = transform_output_to_string(output)
+                result = get_output_table(table_path, query)
                 instrutions.append(change_instruction["order"])
                 intermediems.append(result)
         else:
             if change_process['select'][1] == '':
-                temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output = execute_sql(table_path, temp_sql)
-                result = transform_output_to_string(output)
-                instrutions.append(change_instruction["select"])
-                intermediems.append(result)
+                if len(change_process["select"][0]) == 1:
+                    temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                    result = get_output_table(table_path, temp_sql)
+                    instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables.")
+                    intermediems.append(result)
+                elif len(change_process["select"][0]) > 1:
+                    if len(change_process["select"]) == 3: # have calculation
+                        temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                        result = get_output_table(table_path, temp_sql)
+                        instrutions.append(change_instruction['select'])
+                        intermediems.append(result) 
+                    else:
+                        temp_sql = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
+                        result = get_output_table(table_path, temp_sql)
+                        instrutions.append(f"Select the values in column {change_process['select'][0]} of these tables.")
+                        intermediems.append(result) 
             else:
                 agg = change_process['select'][1]
                 select_string = change_string['select'].replace(f'{agg} (','').replace(')','')
                 temp_sql1 = f"select {select_string} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output1 = execute_sql(table_path, temp_sql1)
-                result1 = transform_output_to_string(output1)
+                result1 = get_output_table(table_path, temp_sql1)
                 instrutions.append(f"Select cells of '{cols['select_col'][0]}' column in rows.")
                 intermediems.append(result1)
                 
                 temp_sql2 = f"select {change_string['select']} from my_table " + " "+change_string["where"] + " "+change_string["group"] + " "+change_string['having']
-                output2 = execute_sql(table_path, temp_sql2)
-                result2 = transform_output_to_string(output2)
+                result2 = get_output_table(table_path, temp_sql2)
                 instrutions.append(f"Calculate {code_english[agg]} cells.")
                 intermediems.append(result2)
+                
             
             if change_string["order"] != "":
-                output = execute_sql(table_path, query)
-                result = transform_output_to_string(output)
+                result = get_output_table(table_path, query)
                 instrutions.append(change_instruction["order"])
                 intermediems.append(result)
                 
@@ -529,6 +649,7 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             sql_cot += f"Answer: {intermediems[len(instrutions)-1]}"
         except:
             import pdb; pdb.set_trace()
+
         return sql_cot, instrutions, intermediems
 
     # Return (processed query, selected dict，selected row, instruction, select_agg)
@@ -547,6 +668,12 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
         select_agg = None
         sql_cot_input = ""
         sql_cot_output = ""
+        
+        if int_cols == []:
+            query = query.replace('<group_condition>','').replace('<having_condition>','').replace('<order_condition>','')
+        if text_cols == []:
+            query = query.replace('<group_condition>','').replace('<having_condition>')
+        
         if '<where_condition>' in query:
             where_part, where_col, where_instruction, where_process = where_condition(header, contents, text_cols, int_cols)
             query = query.replace('<where_condition>', where_part)
@@ -559,10 +686,13 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             query = query.replace('<having_condition>', having_part)
             
         if '<select_condition>' in query:
-            select_part, select_col, select_instruction, select_agg, select_process = select_condition(text_cols, int_cols, group_col)
+            select_part, select_col, select_instruction, select_agg, select_process = select_condition(text_cols, int_cols, group_col, where_col, having_process, template)
             query = query.replace('<select_condition>', select_part)
-            if template == 's':
-                select_rows_list = get_select_rows(query)
+            # if template == 's':
+            #     select_rows_list = get_select_rows(query)
+        
+        if len(select_col) > 1 or select_agg != '': 
+            query = query.replace('<order_condition>', '')
                 
         if '<order_condition>' in query:
             order_part, order_col, order_instruction, order_process = order_condition(text_cols, int_cols, having_process=having_process, select_process=select_process)
@@ -576,23 +706,33 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
             change_instruction = {'select': select_instruction, 'where': where_instruction, 'order': order_instruction, 'having':having_instruction, 'group': group_instruction}
             sql_cot, sql_cot_input, sql_cot_output = generate_sql_cot(query, output_cols, change_string, change_process, change_instruction)
             instruction = where_instruction + group_instruction  + having_instruction + select_instruction + order_instruction
+        elif template != 's':
+            instruction = where_instruction + group_instruction + having_instruction + select_instruction + order_instruction
+            change_string = {'select':select_part, 'where':where_part, 'order':order_part, 'having':having_part, 'group':group_part }
+            change_process = {'select':select_process, 'where':where_process, 'order':order_process, 'having':having_process, 'group':group_process }
+            change_instruction = {'select': select_instruction, 'where': where_instruction, 'order': order_instruction, 'having':having_instruction, 'group': group_instruction}
+            sql_cot, sql_cot_input, sql_cot_output = generate_sql_cot(query, output_cols, change_string, change_process, change_instruction)
+            instruction = where_instruction + group_instruction  + having_instruction + select_instruction + order_instruction
         return query, output_cols, select_rows_list, instruction, select_agg, sql_cot, sql_cot_input, sql_cot_output
     
     def generate_op_and_value(select_col, select_agg):
         if select_col in text_cols:
             op = '='
-            value = f"'{random.choice(contents)[header.index(select_col)]}'"
+            value = f"\"{random.choice(contents)[header.index(select_col)]}\""
         elif select_col in int_cols:
             op = random.choice(['>', '<', '='])
             value = f"{random.choice(contents)[header.index(select_col)]}"
             if select_agg == 'count':
                 value = random.choice([1, 2, 3, 4, 5])
         return f'{op} {value}'
-    def generate_col_and_value(select_col):
+    def generate_col_and_value(select_col, sub_answer):
         if select_col in text_cols:
-            op = '='
+            if len(sub_answer) <= 1:
+                op = '='
+            elif len(sub_answer) > 1:
+                op = 'in'
         elif select_col in int_cols:
-            op = random.choice(['>', '<', '='])
+            op = random_with_weight(['>', '<', '='], [0.4,0.4,0.2])
         return f'{select_col} {op}'
 
     queries = []
@@ -605,39 +745,99 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
         elif id.startswith('d'):
             # Template string that needs to be replaced and the list of available subqueries.
             to_replace_str, templist = extract_subsql_position(query)
-            selected_template = random.choice([sql_templates[temp] for temp in templist])
             # Generate subsql
-            subsql, subsql_cols_dict, subsql_rows_list, subsql_instruction, subsql_select_agg, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='d')
+            while True:
+                selected_template = random.choice([sql_templates[temp] for temp in templist])
+                subsql, subsql_cols_dict, subsql_rows_list, subsql_instruction, subsql_select_agg, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='d')
+                sub_answer = execute_sql(table_path, subsql)
+                select_col = subsql_cols_dict['select_col'][0]
+                if len(sub_answer) == len(contents):
+                    continue
+                if '<op_and_value>' in query:
+                    if subsql_select_agg == '' and len(sub_answer) == 1:
+                        break
+                    if subsql_select_agg != '':
+                        break
+                else:
+                    if select_col in text_cols and subsql_select_agg == '':
+                        break
+                    if select_col in int_cols and len(sub_answer) == 1: 
+                        break
+                
             query = query.replace(to_replace_str, subsql)
-            select_col = subsql_cols_dict['select_col'][0]
+
+            sql_cot_input = [f"This query is a nested query that requires obtaining a query result first, and then using this query result as the \"where condition\" to do the next query."]
+            sql_cot_output = [""]
+            
+            sql_cot_input += sql_cot1_input
+            sql_cot_output += sql_cot1_output
+            
             if '<op_and_value>' in query:
                 query = query.replace('<op_and_value>', generate_op_and_value(select_col, subsql_select_agg))
+                temp_cot_input = f"Then, if the process of the previous query matches {generate_op_and_value(select_col, subsql_select_agg)}. True or False."
+                answer = execute_sql(table_path, query)
+                temp_cot_output = f"Answer is {str(answer[0][0])}"
+                sql_cot_input.append(temp_cot_input)
+                sql_cot_output.append(temp_cot_output)
+                col_dict = subsql_cols_dict
+                select_rows_list = subsql_rows_list
+                instruction = subsql_instruction 
             if '<col_and_op>' in query:
-                query = query.replace('<col_and_op>', generate_col_and_value(select_col))
-            query, sql_cols_dict, sql_rows_list, instruction, select_agg, sql_cot2, sql_cot2_input, sql_cot2_output = single_template_generate(query, template='d')
-            col_dict = merge_dicts(subsql_cols_dict, sql_cols_dict)
-            select_rows_list = subsql_rows_list + sql_rows_list
-            instruction = subsql_instruction + instruction
+                query = query.replace('<col_and_op>', generate_col_and_value(select_col, sub_answer))
+                query, sql_cols_dict, sql_rows_list, instruction, select_agg, sql_cot2, sql_cot2_input, sql_cot2_output = single_template_generate(query, template='s')
+                temp_sql = query.replace("<select_condition>", "*").replace("<order_condition>","")
+                output = execute_sql(table_path, temp_sql)
+                new_contents = [list(item) for item in output]
+                try:
+                    intermediem = transform_output_to_tablestr(header, new_contents)
+                except:
+                    intermediem = ""
+                sql_cot_input.append(f"The process of the previous query is the where condition of the next query. The filtering conditions need to meet {generate_col_and_value(select_col, sub_answer)} \"answer of last step\".")
+                sql_cot_output.append(intermediem)
+                sql_cot_input+=sql_cot2_input
+                sql_cot_output+=sql_cot2_output
+                col_dict = merge_dicts(subsql_cols_dict, sql_cols_dict)
+                select_rows_list = subsql_rows_list + sql_rows_list
+                instruction = subsql_instruction + instruction
             # select_agg = select_agg + subsql_select_agg
-            sql_cot = sql_cot1 + sql_cot2
         elif id.startswith('t'):
             to_replace_str, templist = extract_subsql_position(query)
             selected_template = random.choice([sql_templates[temp] for temp in templist])
-            subsql1, subsql_cols_dict1, select_rows_list1, instruction1, select_agg1, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='t')
+            while True:
+                subsql1, subsql_cols_dict1, select_rows_list1, instruction1, select_agg1, sql_cot1, sql_cot1_input, sql_cot1_output = single_template_generate(selected_template, template='t')
+                subsql2, subsql_cols_dict2, select_rows_list2, instruction2, select_agg2, sql_cot2, sql_cot2_input, sql_cot2_output = single_template_generate(selected_template, template='t')
+                if subsql_cols_dict1['select_col'] == subsql_cols_dict2['select_col']:
+                    break
             query = query.replace(to_replace_str, subsql1, 1)
-            subsql2, subsql_cols_dict2, select_rows_list2, instruction2, select_agg2, sql_cot2, sql_cot2_input, sql_cot2_output = single_template_generate(selected_template, template='t')
             query = query.replace(to_replace_str, subsql2, 1)
+            op = ""
             if '<op>' in query:
-                op = random.choice(['>', '<', '=', '+', '-'])
+                op = random_with_weight(['>', '<', '=', '+', '-'], [0.1,0.1,0.1,0.35,0.35])
                 query = query.replace('<op>', op)
             col_dict = merge_dicts(subsql_cols_dict1, subsql_cols_dict2)
             select_rows_list = select_rows_list1 + select_rows_list2
             instruction = instruction1 + instruction2
             # select_agg = select_agg1 + select_agg2
             sql_cot = sql_cot1 + sql_cot2
+            sql_cot_input = [f"This query is a nested query that requires obtaining the results of two queries first, and then calculating the results of both queries"]
+            sql_cot_output = [""]
+            sql_cot_input += sql_cot1_input + sql_cot2_input
+            sql_cot_output += sql_cot1_output + sql_cot2_output
+            
+            if op in ['>', '<', '=']:
+                sql_cot_input.append(f"Finally, determine whether the answer to the first query is {code_english[op]} the answer to the second query.") 
+            elif op in ['+', '-']:
+                sql_cot_input.append(f"Finally, calculate the {code_english[op]} the answers to the first query and the second query.") 
+
+            
+            output = execute_sql(table_path, query)
+
+
+            sql_cot_output.append(f"The answer is {str(output[0][0])}")
+            
+
             
         query = remove_double_spaces(query)
-        
 
         
             
@@ -646,21 +846,20 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
         try:
             cursor.execute(query)
         except:
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             continue
         answer = cursor.fetchall()
-        if answer is None:
-            continue
         
-        if control_sql_general(header, contents, query, answer, col_dict, select_rows_list, sql_config):
-            # if len(answer) == 1:
-            #     answer = str(answer[0][0])
-            # elif len(answer) > 1:
-            #     answer = [str(item[0]) for item in answer]
-            if sql_config["answer_cells_number"] == 1:
-                answer = str(answer[0][0])
-            elif sql_config["answer_cells_number"] > 1:
-                answer = [str(item[0]) for item in answer]
+        if control_sql_general(header, contents, query, answer, col_dict, select_rows_list, sql_config):              
+            if sql_config['answer_format'] == 'str':
+                answer = transform_output_to_string(answer)
+            else:
+                conn = sqlite3.connect(table_path)
+                df = pd.read_sql(query, conn)
+                new_header = df.columns.tolist()
+                new_contents = df.values.tolist()
+                answer = get_table_str(new_header, new_contents, sql_config['answer_format'])
+            
             output_dict = {}
             output_dict["sql"] = query
             output_dict["answer"] = answer
@@ -712,10 +911,11 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
     elif data_mode == 'ft':
         for data in final_data:
             new_dict = {}
-            input_format = "You are an SQL executor, you need to execute SQL based on the give table and SQL statement to obtain the execution results. Only give me the execution results and do not output any other words. \nTable: {}\nNow you need to execute SQL based on the given table and SQL statement to obtain the execution result. Only give me the result and do not output any other words or SQL statement.\n\nSQL:{}\nAnswer:"
-            df = pd.DataFrame(contents, columns=header)
-            table_str = df.to_markdown(headers=header, tablefmt="pipe", index=False)
+            input_format = "{}\nExecute this SQL based on the above table: {}"
+            table_str = get_table_str(header, contents, sql_config['answer_format'])
             inputs = input_format.format(table_str, data['sql'])
+            
+            
             outputs = data['answer']
             new_dict['input'] = inputs
             new_dict['output'] = outputs
@@ -727,4 +927,3 @@ def general_queries(coarse_templates, num_queries, table_path, sql_config, multi
     output_data = output_data[:num_queries]  
     print(f"Sample:{num_queries*multiple}, Generate:{len(queries)}, No-repeat:{len(final_data)}, Final:{len(output_data)}") 
     return output_data
-
